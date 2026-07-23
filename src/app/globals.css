@@ -1,42 +1,191 @@
+/* ===== VAANI SAHAYAK DESIGN SYSTEM ===== */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Noto+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=Noto+Sans+Devanagari:wght@400;500;600;700&family=Noto+Sans+Tamil:wght@400;500;600;700&family=Noto+Sans+Telugu:wght@400;500;600;700&family=Noto+Sans+Kannada:wght@400;500;600;700&family=Noto+Sans+Malayalam:wght@400;500;600;700&family=Noto+Sans+Bengali:wght@400;500;600;700&family=Noto+Sans+Gujarati:wght@400;500;600;700&family=Noto+Sans+Gurmukhi:wght@400;500;600;700&family=Noto+Sans+Oriya:wght@400;500;600;700&family=Poppins:wght@400;500;600;700;800;900&display=swap');
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+  /* Brand Colors - Sophisticated & Premium */
+  --brand-green-light: #22C55E;
+  --brand-green-primary: #16A34A;
+  --brand-green-dark: #15803D;
+  --brand-saffron: #F97316;
+  --brand-blue: #0EA5E9;
+  
+  /* Indian Tricolor Accents */
+  --saffron: #FF9933;
+  --flag-white: #FFFFFF;
+  --green: #138808;
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
+  /* Neutrals */
+  --bg-primary: #f8fafc;
+  --bg-secondary: #f1f5f9;
+  --text-primary: #020617;
+  --text-secondary: #334155;
+  --text-tertiary: #64748b;
+  --border-light: rgba(255, 255, 255, 0.6);
+  --border-dark: rgba(0, 0, 0, 0.08);
 
-html,
-body {
-  max-width: 100vw;
-  overflow-x: hidden;
-}
+  /* Gradients */
+  --gradient-primary: linear-gradient(135deg, var(--brand-green-primary), #10B981);
+  --gradient-saffron: linear-gradient(135deg, #FF9933 0%, #F97316 100%);
+  --gradient-purple: linear-gradient(135deg, #8B5CF6, #6D28D9);
+  --mesh-bg: radial-gradient(at 20% 20%, rgba(22, 163, 74, 0.12) 0px, transparent 60%),
+             radial-gradient(at 80% 0%, rgba(249, 115, 22, 0.1) 0px, transparent 50%),
+             radial-gradient(at 0% 50%, rgba(14, 165, 233, 0.08) 0px, transparent 50%),
+             radial-gradient(at 80% 50%, rgba(22, 163, 74, 0.08) 0px, transparent 50%),
+             radial-gradient(at 0% 100%, rgba(249, 115, 22, 0.1) 0px, transparent 50%),
+             radial-gradient(at 80% 100%, rgba(14, 165, 233, 0.08) 0px, transparent 50%),
+             radial-gradient(at 50% 50%, rgba(255, 255, 255, 0.5) 0px, transparent 100%);
 
-body {
-  color: var(--foreground);
-  background: var(--background);
-  font-family: Arial, Helvetica, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+  /* Glassmorphism */
+  --glass-bg: rgba(255, 255, 255, 0.7);
+  --glass-border: 1px solid rgba(255, 255, 255, 0.9);
+  --glass-shadow: 0 8px 32px 0 rgba(15, 23, 42, 0.08);
+  --blur-md: blur(16px);
+
+  /* Shadows */
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+  --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+  --shadow-glow: 0 0 20px rgba(22, 163, 74, 0.4);
+
+  /* Animations */
+  --transition-fast: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-normal: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-smooth: 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+
+  /* Border Radius */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
+  --radius-full: 9999px;
+
+  /* Typography */
+  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+  --font-indian: 'Noto Sans', 'Noto Sans Devanagari', 'Noto Sans Tamil',
+    'Noto Sans Telugu', 'Noto Sans Kannada', 'Noto Sans Malayalam',
+    'Noto Sans Bengali', 'Noto Sans Gujarati', 'Noto Sans Gurmukhi',
+    'Noto Sans Oriya', sans-serif;
+  --font-display: 'Poppins', sans-serif;
+
+  /* Spacing */
+  --header-height: 72px;
+  --footer-height: 70px;
 }
 
 * {
-  box-sizing: border-box;
-  padding: 0;
   margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  height: 100%;
+  overflow-x: hidden;
+  scroll-behavior: smooth;
+}
+
+body {
+  min-height: 100%;
+  font-family: var(--font-sans);
+  background-color: var(--bg-primary);
+  background-image: var(--mesh-bg);
+  background-attachment: fixed;
+  color: var(--text-primary);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
+}
+
+/* Fallback for Indian scripts */
+:lang(hi), :lang(ta), :lang(te), :lang(kn), :lang(ml), :lang(bn), :lang(gu), :lang(pa), :lang(or) {
+  font-family: var(--font-indian);
 }
 
 a {
-  color: inherit;
   text-decoration: none;
+  color: inherit;
+  transition: color var(--transition-fast);
 }
 
-@media (prefers-color-scheme: dark) {
-  html {
-    color-scheme: dark;
-  }
+button {
+  border: none;
+  outline: none;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all var(--transition-fast);
+}
+
+input, select, textarea {
+  font-family: inherit;
+  border: none;
+  outline: none;
+  transition: all var(--transition-fast);
+}
+
+/* Scrollbar styling - Sleeker */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(15, 23, 42, 0.15);
+  border-radius: 20px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(15, 23, 42, 0.3);
+}
+
+/* Focus visible */
+:focus-visible {
+  outline: 2px solid var(--brand-green-primary);
+  outline-offset: 2px;
+}
+
+/* Glassmorphism Utility */
+.glass-panel {
+  background: var(--glass-bg);
+  backdrop-filter: var(--blur-md);
+  -webkit-backdrop-filter: var(--blur-md);
+  border: var(--glass-border);
+  box-shadow: var(--glass-shadow);
+}
+
+/* Base Animations */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fade-in {
+  animation: fadeIn var(--transition-smooth) forwards;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+@keyframes float {
+  0% { transform: translateY(0px); }
+  50% { transform: translateY(-5px); }
+  100% { transform: translateY(0px); }
+}
+
+/* Utility classes */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  border: 0;
+}
+
+.no-scroll {
+  overflow: hidden !important;
 }

@@ -1,0 +1,380 @@
+/* ===== PROFILE PAGE — web layout ===== */
+.container {
+    padding-bottom: 2rem;
+    background: var(--bg-white);
+    min-height: 100%;
+}
+
+/* ── Profile header banner ── */
+.profileHeader {
+    background: linear-gradient(135deg, #1B5E20 0%, #2E7D32 60%, #388E3C 100%);
+    padding: 2rem 1.5rem 3rem;
+    text-align: center;
+    position: relative;
+}
+
+.avatarWrapper {
+    position: relative;
+    display: inline-block;
+}
+
+.avatar {
+    width: 86px;
+    height: 86px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.2);
+    border: 3px solid rgba(255, 255, 255, 0.4);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2.2rem;
+    color: #fff;
+    margin: 0 auto 0.75rem;
+}
+
+.progressRing {
+    position: absolute;
+    top: -4px;
+    left: -4px;
+    width: 96px;
+    height: 96px;
+}
+
+.progressBg {
+    fill: none;
+    stroke: rgba(255, 255, 255, 0.2);
+    stroke-width: 3;
+}
+
+.progressFill {
+    fill: none;
+    stroke: var(--saffron);
+    stroke-width: 3;
+    stroke-linecap: round;
+    transition: stroke-dashoffset 0.8s ease;
+}
+
+.profileName {
+    font-family: var(--font-display);
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: #fff;
+    margin-bottom: 0.25rem;
+}
+
+.profileLabel {
+    font-size: 0.75rem;
+    color: rgba(255, 255, 255, 0.7);
+}
+
+.completionBadge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.35rem 0.85rem;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.15);
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 0.7rem;
+    font-weight: 500;
+    margin-top: 0.75rem;
+    backdrop-filter: blur(4px);
+}
+
+/* ── Form section ── */
+.formSection {
+    padding: 1.25rem 1rem;
+    margin-top: -1.5rem;
+    position: relative;
+    z-index: 1;
+}
+
+.formCard {
+    background: #fff;
+    border-radius: 20px;
+    padding: 1.5rem 1.25rem;
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
+}
+
+.formTitle {
+    font-family: var(--font-display);
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--leaf-green);
+    margin-bottom: 1.25rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.fieldGroup {
+    margin-bottom: 1rem;
+}
+
+.label {
+    display: block;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #666;
+    margin-bottom: 0.35rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.input {
+    width: 100%;
+    padding: 0.8rem 1rem;
+    border-radius: 10px;
+    background: #f8f9fa;
+    border: 1.5px solid #e8e8e8;
+    font-size: 0.9rem;
+    color: #333;
+    transition: all 0.2s;
+}
+
+.input:focus {
+    border-color: var(--leaf-green);
+    background: #fff;
+    box-shadow: 0 0 0 3px rgba(46, 125, 50, 0.08);
+}
+
+.select {
+    width: 100%;
+    padding: 0.8rem 1rem;
+    border-radius: 10px;
+    background: #f8f9fa;
+    border: 1.5px solid #e8e8e8;
+    font-size: 0.9rem;
+    color: #333;
+    appearance: none;
+    background-image: url("data:image/svg+xml;charset=UTF-8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24'><path fill='%23666' d='M7 10l5 5 5-5z'/></svg>");
+    background-repeat: no-repeat;
+    background-position: right 0.75rem center;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.select:focus {
+    border-color: var(--leaf-green);
+    background-color: #fff;
+}
+
+.row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.75rem;
+}
+
+.chipGroup {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-top: 0.3rem;
+}
+
+.chip {
+    padding: 0.45rem 0.85rem;
+    border-radius: 999px;
+    background: #f0f0f0;
+    font-size: 0.78rem;
+    color: #555;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: 1.5px solid transparent;
+}
+
+.chip:hover {
+    background: #E8F5E9;
+}
+
+.chipActive {
+    background: #E8F5E9;
+    border-color: var(--leaf-green);
+    color: var(--leaf-green);
+    font-weight: 600;
+}
+
+.saveBtn {
+    width: 100%;
+    padding: 0.9rem;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #1B5E20, #2E7D32);
+    color: #fff;
+    font-family: var(--font-display);
+    font-size: 0.95rem;
+    font-weight: 600;
+    margin-top: 1rem;
+    box-shadow: 0 4px 12px rgba(27, 94, 32, 0.3);
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+}
+
+.saveBtn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 16px rgba(27, 94, 32, 0.35);
+}
+
+.saveBtn:active {
+    transform: translateY(0);
+}
+
+.savedMsg {
+    text-align: center;
+    color: var(--leaf-green);
+    font-size: 0.85rem;
+    font-weight: 600;
+    margin-top: 0.75rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.35rem;
+}
+
+.backBtn {
+    position: absolute;
+    top: 1.25rem;
+    left: 1rem;
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.15);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    z-index: 10;
+    transition: background 0.2s;
+}
+
+.backBtn:hover {
+    background: rgba(255, 255, 255, 0.25);
+}
+
+.divider {
+    height: 1px;
+    background: #f0f0f0;
+    margin: 1.25rem 0;
+}
+
+.sectionLabel {
+    font-family: var(--font-display);
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--saffron);
+    margin-bottom: 0.75rem;
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+}
+
+/* ── Tablet (641px+) ── */
+@media (min-width: 641px) {
+    .profileHeader {
+        padding: 2.5rem 2rem 4rem;
+    }
+
+    .avatar {
+        width: 96px;
+        height: 96px;
+        font-size: 2.5rem;
+    }
+
+    .profileName {
+        font-size: 1.5rem;
+    }
+
+    .formSection {
+        padding: 1.5rem 1.5rem;
+    }
+
+    .formCard {
+        padding: 2rem 1.75rem;
+    }
+}
+
+/* ── Desktop (1024px+): two-column form layout ── */
+@media (min-width: 1024px) {
+    .profileHeader {
+        padding: 3rem 3rem 4.5rem;
+        text-align: left;
+    }
+
+    .avatar {
+        width: 110px;
+        height: 110px;
+        font-size: 2.8rem;
+        margin: 0 0 0.75rem;
+    }
+
+    .progressRing {
+        width: 120px;
+        height: 120px;
+        top: -5px;
+        left: -5px;
+    }
+
+    .profileName {
+        font-size: 1.75rem;
+    }
+
+    .formSection {
+        padding: 2rem 2.5rem;
+    }
+
+    .formCard {
+        padding: 2.5rem 2.5rem;
+    }
+
+    /* Two-column form grid on desktop */
+    .formGrid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0 2rem;
+    }
+
+    .row {
+        gap: 1.25rem;
+    }
+
+    .saveBtn {
+        max-width: 320px;
+    }
+}
+
+/* ── Wide (1280px+) ── */
+@media (min-width: 1280px) {
+    .formSection {
+        padding: 2rem 3rem;
+    }
+
+    .formCard {
+        padding: 2.5rem 3rem;
+    }
+}
+
+/* ── Small mobile (≤ 360px) ── */
+@media (max-width: 360px) {
+    .row {
+        grid-template-columns: 1fr;
+    }
+
+    .formCard {
+        padding: 1.25rem 1rem;
+    }
+}
+
+@media (max-width: 320px) {
+    .profileHeader {
+        padding: 1.5rem 1rem 2.5rem;
+    }
+
+    .avatar {
+        width: 68px;
+        height: 68px;
+        font-size: 1.7rem;
+    }
+}

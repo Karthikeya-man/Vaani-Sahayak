@@ -1,0 +1,601 @@
+/* ===== ADMIN DASHBOARD ===== */
+
+.shell {
+    min-height: 100vh;
+    background: #0d1117;
+    display: flex;
+    flex-direction: column;
+    font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', sans-serif;
+    color: #e6edf3;
+}
+
+/* ── Top Bar ── */
+.topBar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.85rem 1.5rem;
+    background: linear-gradient(135deg, #0f2a14 0%, #1B5E20 100%);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    flex-shrink: 0;
+}
+
+.topBarLeft {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+}
+
+.logo {
+    font-size: 1.8rem;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 50%;
+    width: 44px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 2px solid rgba(255, 255, 255, 0.2);
+}
+
+.brand {
+    font-size: 1rem;
+    font-weight: 700;
+    color: #fff;
+}
+
+.brandSub {
+    font-size: 0.7rem;
+    color: rgba(255, 255, 255, 0.6);
+    margin-top: 1px;
+}
+
+.topBarRight {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.farmerLink {
+    font-size: 0.75rem;
+    color: rgba(255, 255, 255, 0.7);
+    text-decoration: none;
+    padding: 0.35rem 0.75rem;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 99px;
+    transition: all 0.2s;
+}
+
+.farmerLink:hover {
+    color: #fff;
+    border-color: rgba(255, 255, 255, 0.5);
+}
+
+.adminBadge {
+    font-size: 0.75rem;
+    font-weight: 600;
+    padding: 0.35rem 0.85rem;
+    background: rgba(255, 255, 255, 0.12);
+    border-radius: 99px;
+    color: #fff;
+}
+
+/* ── Stats Row ── */
+.statsRow {
+    display: flex;
+    gap: 0;
+    padding: 0 1.5rem;
+    margin-top: 1.25rem;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.statCard {
+    flex: 1;
+    min-width: 140px;
+    background: #161b22;
+    border: 1px solid #30363d;
+    border-radius: 14px;
+    padding: 1rem 1.25rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    transition: border-color 0.2s;
+}
+
+.statCard:hover {
+    border-color: #2E7D32;
+}
+
+.statIcon {
+    font-size: 1.4rem;
+}
+
+.statValue {
+    font-size: 1.6rem;
+    font-weight: 800;
+    line-height: 1;
+}
+
+.statLabel {
+    font-size: 0.7rem;
+    color: #8b949e;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* ── Main Panel ── */
+.mainPanel {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+    margin: 1rem 1.5rem 1.5rem;
+    gap: 1rem;
+    min-height: 0;
+}
+
+/* ── Session List ── */
+.sessionList {
+    width: 320px;
+    flex-shrink: 0;
+    background: #161b22;
+    border: 1px solid #30363d;
+    border-radius: 14px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+}
+
+.sessionList::-webkit-scrollbar {
+    width: 4px;
+}
+
+.sessionList::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.sessionList::-webkit-scrollbar-thumb {
+    background: #30363d;
+    border-radius: 99px;
+}
+
+.sessionListHeader {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.9rem 1rem;
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: #8b949e;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    border-bottom: 1px solid #21262d;
+    flex-shrink: 0;
+    position: sticky;
+    top: 0;
+    background: #161b22;
+    z-index: 1;
+}
+
+.sessionCount {
+    background: #2E7D32;
+    color: #fff;
+    border-radius: 99px;
+    padding: 0.15rem 0.55rem;
+    font-size: 0.72rem;
+    font-weight: 700;
+}
+
+.sessionItem {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.7rem;
+    padding: 0.85rem 1rem;
+    border-bottom: 1px solid #21262d;
+    cursor: pointer;
+    transition: background 0.15s;
+}
+
+.sessionItem:hover {
+    background: #1c2128;
+}
+
+.sessionActive {
+    background: #1a2d1b !important;
+    border-left: 3px solid #2E7D32;
+}
+
+.sessionAvatar {
+    font-size: 1.5rem;
+    flex-shrink: 0;
+    margin-top: 2px;
+}
+
+.sessionInfo {
+    flex: 1;
+    min-width: 0;
+}
+
+.sessionName {
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: #e6edf3;
+}
+
+.sessionQuery {
+    font-size: 0.74rem;
+    color: #8b949e;
+    margin-top: 2px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.sessionMeta {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    margin-top: 4px;
+}
+
+.langTag {
+    font-size: 0.62rem;
+    font-weight: 700;
+    background: rgba(46, 125, 50, 0.25);
+    color: #69f0ae;
+    border-radius: 4px;
+    padding: 1px 5px;
+    border: 1px solid rgba(46, 125, 50, 0.3);
+}
+
+.sessionVillage {
+    font-size: 0.68rem;
+    color: #6e7681;
+}
+
+.sessionRight {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 6px;
+    flex-shrink: 0;
+}
+
+.sessionTime {
+    font-size: 0.65rem;
+    color: #6e7681;
+    white-space: nowrap;
+}
+
+.statusDot {
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+}
+
+/* ── Chat Panel ── */
+.chatPanel {
+    flex: 1;
+    background: #161b22;
+    border: 1px solid #30363d;
+    border-radius: 14px;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    min-height: 0;
+}
+
+.chatPanelHeader {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.9rem 1.2rem;
+    background: #1c2128;
+    border-bottom: 1px solid #30363d;
+    flex-shrink: 0;
+}
+
+.chatPanelAvatar {
+    font-size: 1.8rem;
+}
+
+.chatPanelName {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: #e6edf3;
+}
+
+.chatPanelMeta {
+    font-size: 0.72rem;
+    color: #8b949e;
+    margin-top: 2px;
+}
+
+.statusBadge {
+    margin-left: auto;
+    font-size: 0.68rem;
+    font-weight: 700;
+    color: #fff;
+    padding: 0.3rem 0.75rem;
+    border-radius: 99px;
+    text-transform: capitalize;
+}
+
+.chatMessages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 1rem 1.2rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+    background: #0d1117;
+}
+
+.chatMessages::-webkit-scrollbar {
+    width: 4px;
+}
+
+.chatMessages::-webkit-scrollbar-thumb {
+    background: #30363d;
+    border-radius: 99px;
+}
+
+.adminBubbleRow {
+    display: flex;
+}
+
+.adminBubbleRowRight {
+    justify-content: flex-end;
+}
+
+.adminBubble {
+    max-width: 65%;
+    padding: 0.6rem 0.95rem;
+    border-radius: 16px;
+    font-size: 0.84rem;
+    line-height: 1.55;
+    word-break: break-word;
+}
+
+.adminBubbleLeft {
+    background: #1c2128;
+    border: 1px solid #30363d;
+    color: #e6edf3;
+    border-bottom-left-radius: 4px;
+}
+
+.adminBubbleRight {
+    background: linear-gradient(135deg, #1B5E20, #2E7D32);
+    color: #fff;
+    border-bottom-right-radius: 4px;
+    box-shadow: 0 2px 10px rgba(27, 94, 32, 0.3);
+}
+
+/* Quick reply */
+.quickReplies {
+    display: flex;
+    gap: 0.5rem;
+    padding: 0.6rem 1.2rem;
+    border-top: 1px solid #21262d;
+    overflow-x: auto;
+    flex-shrink: 0;
+}
+
+.quickReplies::-webkit-scrollbar {
+    height: 3px;
+}
+
+.quickReplies::-webkit-scrollbar-thumb {
+    background: #30363d;
+    border-radius: 99px;
+}
+
+.quickReplyBtn {
+    flex-shrink: 0;
+    font-size: 0.7rem;
+    padding: 0.35rem 0.75rem;
+    border: 1px solid #30363d;
+    border-radius: 99px;
+    background: #1c2128;
+    color: #8b949e;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.2s;
+}
+
+.quickReplyBtn:hover {
+    border-color: #2E7D32;
+    color: #69f0ae;
+    background: rgba(46, 125, 50, 0.1);
+}
+
+/* Reply input */
+.replyRow {
+    display: flex;
+    gap: 0.6rem;
+    align-items: center;
+    padding: 0.85rem 1.2rem;
+    border-top: 1px solid #30363d;
+    background: #1c2128;
+    flex-shrink: 0;
+}
+
+.replyInput {
+    flex: 1;
+    padding: 0.65rem 1rem;
+    border-radius: 10px;
+    background: #0d1117;
+    border: 1.5px solid #30363d;
+    color: #e6edf3;
+    font-size: 0.84rem;
+    font-family: inherit;
+    transition: border-color 0.2s;
+}
+
+.replyInput:focus {
+    outline: none;
+    border-color: #2E7D32;
+}
+
+.replyInput::placeholder {
+    color: #6e7681;
+}
+
+.replyBtn {
+    padding: 0.65rem 1.3rem;
+    border-radius: 10px;
+    background: linear-gradient(135deg, #1B5E20, #2E7D32);
+    color: #fff;
+    font-size: 0.84rem;
+    font-weight: 600;
+    border: none;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: opacity 0.2s, transform 0.15s;
+}
+
+.replyBtn:hover {
+    opacity: 0.9;
+    transform: scale(1.02);
+}
+
+.noSession {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #6e7681;
+    font-size: 0.9rem;
+}
+
+/* ── Responsive ── */
+@media (max-width: 900px) {
+    .mainPanel {
+        flex-direction: column;
+        margin: 0.75rem;
+        gap: 0.75rem;
+    }
+
+    .sessionList {
+        width: 100%;
+        max-height: 260px;
+    }
+
+    .statsRow {
+        padding: 0 0.75rem;
+        gap: 0.6rem;
+    }
+
+    .topBar {
+        padding: 0.75rem 1rem;
+    }
+
+    .statCard {
+        min-width: 120px;
+        padding: 0.75rem;
+    }
+}
+
+@media (max-width: 600px) {
+    .statCard {
+        min-width: 44%;
+    }
+
+    .brandSub {
+        display: none;
+    }
+
+    .adminBubble {
+        max-width: 82%;
+    }
+}
+
+/* ── Login Screen ── */
+.loginWrapper {
+    height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #0d1117;
+    position: relative;
+    overflow: hidden;
+}
+
+.loginCard {
+    background: #161b22;
+    border: 1px solid #30363d;
+    border-radius: 16px;
+    padding: 2.5rem 2rem;
+    width: 100%;
+    max-width: 400px;
+    z-index: 2;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+    text-align: center;
+}
+
+.loginLogo {
+    font-size: 3rem;
+    margin-bottom: 0.5rem;
+}
+
+.loginTitle {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin-bottom: 0.25rem;
+    color: #e6edf3;
+}
+
+.loginSub {
+    font-size: 0.85rem;
+    color: #8b949e;
+    margin-bottom: 2rem;
+}
+
+.loginInput {
+    width: 100%;
+    padding: 0.8rem 1rem;
+    background: #0d1117;
+    border: 1px solid #30363d;
+    color: #e6edf3;
+    border-radius: 8px;
+    margin-bottom: 1rem;
+    font-size: 0.95rem;
+    transition: border-color 0.2s;
+}
+
+.loginInput:focus {
+    outline: none;
+    border-color: #2E7D32;
+}
+
+.loginBtn {
+    width: 100%;
+    padding: 0.8rem;
+    background: linear-gradient(135deg, #1B5E20, #2E7D32);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    margin-top: 0.5rem;
+    transition: opacity 0.2s, transform 0.1s;
+}
+
+.loginBtn:hover {
+    opacity: 0.9;
+    transform: scale(1.02);
+}
+
+.loginBtn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.errorText {
+    color: #f85149;
+    font-size: 0.85rem;
+    margin-top: 1rem;
+    min-height: 1.2rem;
+}

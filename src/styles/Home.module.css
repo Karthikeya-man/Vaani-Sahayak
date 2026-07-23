@@ -1,0 +1,148 @@
+/* ===== HOME PAGE — responsive web app layout ===== */
+
+/*
+  appShell: full-page flex column (header + bodyRow + footer)
+  bodyRow:  flex row   (sidebar + mainContent)
+  mainContent: scrollable content area
+*/
+
+/* ─── App shell ── */
+.appShell {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    min-height: 100dvh;
+    /* Background handled in globals.css for an immersive feel */
+}
+
+/* ─── Body row: sidebar + content ── */
+.bodyRow {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+    /* sidebar stays sticky */
+    min-height: 0;
+    position: relative;
+    z-index: 1;
+}
+
+/* ─── Main scrollable content ── */
+.mainContent {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(22, 163, 74, 0.3) transparent;
+    /* bottom padding for mobile bottom nav */
+    padding-bottom: calc(var(--footer-height) + 16px);
+    display: flex;
+    flex-direction: column;
+    perspective: 1000px;
+}
+
+.mainContent::-webkit-scrollbar {
+    width: 6px;
+}
+
+.mainContent::-webkit-scrollbar-thumb {
+    background: rgba(22, 163, 74, 0.4);
+    border-radius: 10px;
+}
+.mainContent::-webkit-scrollbar-thumb:hover {
+    background: rgba(22, 163, 74, 0.6);
+}
+
+.mainContent::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+/* ─── Feature grid ── */
+.featureGrid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.25rem;
+    padding: 1rem 1.25rem 2rem;
+    position: relative;
+    z-index: 2;
+}
+
+.spacer {
+    height: 1.5rem;
+}
+
+/* ══════════════════════════════════════
+   BREAKPOINTS
+   ══════════════════════════════════════ */
+
+/* ── Tiny mobile (≤ 360px) ── */
+@media (max-width: 360px) {
+    .featureGrid {
+        gap: 0.75rem;
+        padding: 0 0.75rem 0.5rem;
+    }
+}
+
+/* ── Mobile (361–640px) ── */
+@media (min-width: 361px) and (max-width: 640px) {
+    .featureGrid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1rem;
+        padding: 0 1rem 0.5rem;
+    }
+}
+
+/* ── Large mobile / small tablet (481–768px) ── */
+@media (min-width: 481px) and (max-width: 768px) {
+    .featureGrid {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 1.5rem;
+        padding: 1rem 1.75rem 2rem;
+    }
+}
+
+/* ── Tablet (769–1023px) ── */
+@media (min-width: 769px) and (max-width: 1023px) {
+    .featureGrid {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 1.75rem;
+        padding: 1rem 2.5rem 2rem;
+    }
+}
+
+/* ── Desktop (≥ 1024px) ── */
+@media (min-width: 1024px) {
+    .mainContent {
+        /* WebFooter is inside mainContent — no extra bottom padding needed */
+        padding-bottom: 0;
+        max-width: none;
+    }
+
+    .featureGrid {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 2.5rem;
+        padding: 1rem 3rem 3rem;
+        max-width: 1200px;
+        margin: 0 auto;
+    }
+}
+
+/* ── Wide desktop (≥ 1280px) ── */
+@media (min-width: 1280px) {
+    .featureGrid {
+        grid-template-columns: repeat(4, 1fr);
+        gap: 2rem;
+        padding: 0 4rem 2rem;
+        max-width: 1400px;
+    }
+}
+
+/* ── Ultra wide (≥ 1600px) ── */
+@media (min-width: 1600px) {
+    .featureGrid {
+        grid-template-columns: repeat(6, 1fr);
+        gap: 2.5rem;
+        padding: 0 5rem 2.5rem;
+        max-width: 1800px;
+    }
+}
