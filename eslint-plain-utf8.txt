@@ -1,0 +1,35 @@
+﻿
+C:\Users\karth\OneDrive\Desktop\Vaani Sahayak\vaani-sahayak-app\src\app\crop\page.jsx
+  127:41  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+  145:41  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+C:\Users\karth\OneDrive\Desktop\Vaani Sahayak\vaani-sahayak-app\src\app\page.js
+  38:7  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+  36 |     // Only show splash screen once per browser session
+  37 |     if (sessionStorage.getItem("splashShown")) {
+> 38 |       setShowSplash(false);
+     |       ^^^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  39 |     }
+  40 |   }, []);
+  41 |  react-hooks/set-state-in-effect
+
+C:\Users\karth\OneDrive\Desktop\Vaani Sahayak\vaani-sahayak-app\src\components\Header.jsx
+  22:21  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+C:\Users\karth\OneDrive\Desktop\Vaani Sahayak\vaani-sahayak-app\src\components\SplashScreen.jsx
+  51:17  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+  69:29  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+C:\Users\karth\OneDrive\Desktop\Vaani Sahayak\vaani-sahayak-app\src\context\LanguageContext.jsx
+  15:13  warning  Unused eslint-disable directive (no problems were reported from 'react-hooks/exhaustive-deps')
+
+Γ£û 7 problems (1 error, 6 warnings)
+  0 errors and 1 warning potentially fixable with the `--fix` option.
+

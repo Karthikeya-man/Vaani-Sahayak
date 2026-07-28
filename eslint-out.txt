@@ -1,0 +1,56 @@
+[0m[0m
+[0m[4mC:\Users\karth\OneDrive\Desktop\Vaani Sahayak\vaani-sahayak-app\src\app\admin\page.jsx[24m[0m
+[0m  [2m93:21[22m  [31merror[39m  Do not use an `<a>` element to navigate to `/`. Use `<Link />` from `next/link` instead. See: https://nextjs.org/docs/messages/no-html-link-for-pages  [2m@next/next/no-html-link-for-pages[22m[0m
+[0m[0m
+[0m[4mC:\Users\karth\OneDrive\Desktop\Vaani Sahayak\vaani-sahayak-app\src\app\crop\page.jsx[24m[0m
+[0m  [2m127:41[22m  [33mwarning[39m  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  [2m@next/next/no-img-element[22m[0m
+[0m  [2m145:41[22m  [33mwarning[39m  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  [2m@next/next/no-img-element[22m[0m
+[0m[0m
+[0m[4mC:\Users\karth\OneDrive\Desktop\Vaani Sahayak\vaani-sahayak-app\src\app\schemes\page.jsx[24m[0m
+[0m   [2m54:9[22m   [31merror[39m  Error: Calling setState synchronously within an effect can trigger cascading renders[0m
+[0m[0m
+[0mEffects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:[0m
+[0m* Update external systems with the latest state from React.[0m
+[0m* Subscribe for updates from some external system, calling setState in a callback function when external state changes.[0m
+[0m[0m
+[0mCalling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).[0m
+[0m[0m
+[0m  52 |     useEffect(() => {[0m
+[0m  53 |         const lowerQ = searchQuery.toLowerCase();[0m
+[0m> 54 |         setFilteredSchemes([0m
+[0m     |         ^^^^^^^^^^^^^^^^^^ Avoid calling setState() directly within an effect[0m
+[0m  55 |             MOCK_SCHEMES.filter(s =>[0m
+[0m  56 |                 s.title.toLowerCase().includes(lowerQ) ||[0m
+[0m  57 |                 s.tags.some(tag => tag.toLowerCase().includes(lowerQ))  [2mreact-hooks/set-state-in-effect[22m[0m
+[0m  [2m136:62[22m  [31merror[39m  `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              [2mreact/no-unescaped-entities[22m[0m
+[0m  [2m136:76[22m  [31merror[39m  `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              [2mreact/no-unescaped-entities[22m[0m
+[0m[0m
+[0m[4mC:\Users\karth\OneDrive\Desktop\Vaani Sahayak\vaani-sahayak-app\src\components\Header.jsx[24m[0m
+[0m  [2m22:21[22m  [33mwarning[39m  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  [2m@next/next/no-img-element[22m[0m
+[0m[0m
+[0m[4mC:\Users\karth\OneDrive\Desktop\Vaani Sahayak\vaani-sahayak-app\src\components\SplashScreen.jsx[24m[0m
+[0m  [2m54:17[22m  [33mwarning[39m  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  [2m@next/next/no-img-element[22m[0m
+[0m  [2m72:29[22m  [33mwarning[39m  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  [2m@next/next/no-img-element[22m[0m
+[0m[0m
+[0m[4mC:\Users\karth\OneDrive\Desktop\Vaani Sahayak\vaani-sahayak-app\src\components\WebFooter.jsx[24m[0m
+[0m  [2m22:30[22m  [31merror[39m  `'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`  [2mreact/no-unescaped-entities[22m[0m
+[0m[0m
+[0m[4mC:\Users\karth\OneDrive\Desktop\Vaani Sahayak\vaani-sahayak-app\src\context\LanguageContext.jsx[24m[0m
+[0m  [2m14:13[22m  [31merror[39m  Error: Calling setState synchronously within an effect can trigger cascading renders[0m
+[0m[0m
+[0mEffects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:[0m
+[0m* Update external systems with the latest state from React.[0m
+[0m* Subscribe for updates from some external system, calling setState in a callback function when external state changes.[0m
+[0m[0m
+[0mCalling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).[0m
+[0m[0m
+[0m  12 |         const saved = localStorage.getItem("vaani_lang");[0m
+[0m  13 |         if (saved && translations[saved]) {[0m
+[0m> 14 |             setLangState(saved);[0m
+[0m     |             ^^^^^^^^^^^^ Avoid calling setState() directly within an effect[0m
+[0m  15 |         }[0m
+[0m  16 |     }, []);[0m
+[0m  17 |  [2mreact-hooks/set-state-in-effect[22m[0m
+[0m[0m
+[0m[31m[1m✖ 11 problems (6 errors, 5 warnings)[22m[39m[0m
+[0m[31m[1m[22m[39m[0m
