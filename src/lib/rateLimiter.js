@@ -1,4 +1,13 @@
-// In-memory Sliding Window Rate Limiter with header tracking & IP isolation
+/**
+ * ⚠️ KNOWN ARCHITECTURAL LIMITATION & PRODUCTION NOTICE:
+ * This rate limiter is IN-MEMORY (backed by a JavaScript Map).
+ * 
+ * • Scope: Single Node.js server process only.
+ * • Limitation: Will NOT enforce global rate limits across horizontally auto-scaled instances,
+ *   container clusters (K8s/ECS), or serverless functions (Vercel / AWS Lambda).
+ * • Multi-Instance Production Recommendation: Connect to a shared distributed store like Redis
+ *   (e.g., @upstash/ratelimit or ioredis).
+ */
 
 const requestLogs = new Map();
 
@@ -9,7 +18,7 @@ const requestLogs = new Map();
  * @param {number} [options.limit=10] - Max allowed requests per window
  * @param {number} [options.windowMs=60000] - Window duration in milliseconds (default 60s)
  * @param {string} [options.prefix='general'] - Route identifier prefix
- * @returns {{ allowed: boolean, remaining: number, resetMs: number, limit: number }}
+ * @returns {{ allowed: boolean, remaining: number, resetMs: number, limit: number, isInMemoryStore: true }}
  */
 export function checkRateLimit(request, options = {}) {
     const limit = options.limit || 10;
@@ -42,7 +51,8 @@ export function checkRateLimit(request, options = {}) {
         allowed,
         limit,
         remaining,
-        resetMs: Math.max(1, resetMs)
+        resetMs: Math.max(1, resetMs),
+        isInMemoryStore: true
     };
 }
 
