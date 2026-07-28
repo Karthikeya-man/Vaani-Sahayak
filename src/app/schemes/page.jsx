@@ -1,5 +1,5 @@
 "use client";
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
     IoArrowBack, IoSearchOutline, IoChevronForward,
@@ -13,7 +13,6 @@ import Sidebar from "@/components/Sidebar";
 import Footer from "@/components/Footer";
 import styles from "@/styles/Schemes.module.css";
 
-// ── Category definitions ──
 const CATEGORIES = [
     { key: "all", labelKey: "schemesCatAll" },
     { key: "income", labelKey: "schemesCatIncome" },
@@ -23,8 +22,7 @@ const CATEGORIES = [
     { key: "state", labelKey: "schemesCatState" },
 ];
 
-// ── Expanded mock data ──
-const MOCK_SCHEMES = [
+const MOCK_SCHEMES_FALLBACK = [
     {
         id: "pmkisan",
         icon: "💰",
@@ -204,16 +202,76 @@ function SchemesContent() {
     const [searchQuery, setSearchQuery] = useState("");
     const [activeCategory, setActiveCategory] = useState("all");
     const [selectedScheme, setSelectedScheme] = useState(null);
+    const [schemes, setSchemes] = useState(MOCK_SCHEMES_FALLBACK);
+    const [isCached, setIsCached] = useState(false);
+    const [cachedAt, setCachedAt] = useState(null);
+    const [schemeFeedback, setSchemeFeedback] = useState({});
     const tabsRef = useRef(null);
 
-    // Filter by category + search
-    const filteredSchemes = MOCK_SCHEMES.filter(s => {
+    useEffect(() => {
+        let isMounted = true;
+        async function fetchSchemesData() {
+            try {
+                const res = await fetch("/api/schemes");
+                const data = await res.json();
+                if (isMounted && res.ok && data.schemes) {
+                    setSchemes(data.schemes);
+                    const cachedHeader = res.headers.get("X-Cached-At");
+                    const isOffline = typeof navigator !== "undefined" && !navigator.onLine;
+                    if (isOffline || cachedHeader || data.fetchedAt) {
+                        setIsCached(isOffline || !!cachedHeader);
+                        setCachedAt(cachedHeader || data.fetchedAt || new Date().toISOString());
+                    } else {
+                        setIsCached(false);
+                        setCachedAt(null);
+                    }
+                    localStorage.setItem("vaani_cached_schemes", JSON.stringify({
+                        schemes: data.schemes,
+                        timestamp: cachedHeader || data.fetchedAt || new Date().toISOString()
+                    }));
+                }
+            } catch (err) {
+                console.warn("[Schemes Page] Fetch failed, checking backup:", err.message);
+                try {
+                    const saved = localStorage.getItem("vaani_cached_schemes");
+                    if (saved && isMounted) {
+                        const parsed = JSON.parse(saved);
+                        setSchemes(parsed.schemes);
+                        setIsCached(true);
+                        setCachedAt(parsed.timestamp);
+                    }
+                } catch (e) {}
+            }
+        }
+
+        fetchSchemesData();
+        return () => { isMounted = false; };
+    }, []);
+
+    const submitSchemeFeedback = async (schemeId, helpful) => {
+        setSchemeFeedback(prev => ({ ...prev, [schemeId]: helpful ? 'yes' : 'no' }));
+        try {
+            await fetch('/api/feedback', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    category: 'scheme-match',
+                    schemeId,
+                    helpful
+                })
+            });
+        } catch (e) {
+            console.warn('Failed to submit scheme feedback:', e.message);
+        }
+    };
+
+    const filteredSchemes = schemes.filter(s => {
         const matchesCategory = activeCategory === "all" || s.category === activeCategory;
         const lowerQ = searchQuery.toLowerCase();
         const matchesSearch = !searchQuery ||
             s.title.toLowerCase().includes(lowerQ) ||
             s.description.toLowerCase().includes(lowerQ) ||
-            s.tags.some(tag => tag.toLowerCase().includes(lowerQ));
+            (s.tags && s.tags.some(tag => tag.toLowerCase().includes(lowerQ)));
         return matchesCategory && matchesSearch;
     });
 
@@ -222,7 +280,6 @@ function SchemesContent() {
         if (tab === "home") router.push("/");
     };
 
-    // Category color map for accent bars
     const categoryColor = {
         income: "#10b981",
         insurance: "#3b82f6",
@@ -230,6 +287,8 @@ function SchemesContent() {
         subsidy: "#8b5cf6",
         state: "#ef4444",
     };
+
+    const formattedTime = cachedAt ? new Date(cachedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
 
     return (
         <div className={styles.appShell}>
@@ -248,7 +307,6 @@ function SchemesContent() {
 
             <div className={styles.bodyRow}>
                 <main className={styles.mainContent}>
-                    {/* ── Page Header ── */}
                     <div className={styles.pageHeader}>
                         <button className={styles.backBtn} onClick={() => router.push("/")}>
                             <IoArrowBack size={24} />
@@ -256,7 +314,21 @@ function SchemesContent() {
                         <h1 className={styles.pageTitle}>{t("schemesPageTitle")}</h1>
                     </div>
 
-                    {/* ── Search Bar ── */}
+                    {isCached && (
+                        <div style={{
+                            backgroundColor: '#fef3c7',
+                            color: '#92400e',
+                            border: '1px solid #fde68a',
+                            padding: '8px 14px',
+                            borderRadius: '10px',
+                            fontSize: '0.85rem',
+                            marginBottom: '14px',
+                            fontWeight: 600
+                        }}>
+                            ⚡ Showing cached data from {formattedTime || 'offline cache'}
+                        </div>
+                    )}
+
                     <div className={styles.searchBarContainer}>
                         <IoSearchOutline size={20} className={styles.searchIcon} />
                         <input
@@ -273,7 +345,6 @@ function SchemesContent() {
                         )}
                     </div>
 
-                    {/* ── Category Tabs ── */}
                     <div className={styles.categoryTabs} ref={tabsRef}>
                         {CATEGORIES.map(cat => (
                             <button
@@ -286,7 +357,6 @@ function SchemesContent() {
                         ))}
                     </div>
 
-                    {/* ── Schemes List ── */}
                     <div className={styles.schemesList}>
                         <AnimatePresence mode="popLayout">
                             {filteredSchemes.map((scheme, i) => (
@@ -312,7 +382,7 @@ function SchemesContent() {
                                         <p className={styles.schemeDesc}>{scheme.description}</p>
 
                                         <div className={styles.tagsRow}>
-                                            {scheme.tags.map(tag => (
+                                            {scheme.tags && scheme.tags.map(tag => (
                                                 <span key={tag} className={styles.tag}>{tag}</span>
                                             ))}
                                             <span className={styles.deadlineTag}>
@@ -344,7 +414,6 @@ function SchemesContent() {
 
             <Footer activeTab={activeTab} onTabChange={handleTabChange} />
 
-            {/* ── Detail Drawer/Modal ── */}
             <AnimatePresence>
                 {selectedScheme && (
                     <>
@@ -386,46 +455,75 @@ function SchemesContent() {
 
                                 <p className={styles.drawerDesc}>{selectedScheme.description}</p>
 
-                                {/* Eligibility */}
-                                <div className={styles.drawerSection}>
-                                    <h4 className={styles.sectionLabel}>
-                                        <IoShieldCheckmarkOutline size={18} />
-                                        {t("schemesEligibility")}
-                                    </h4>
-                                    <ul className={styles.drawerList}>
-                                        {selectedScheme.eligibility.map((item, i) => (
-                                            <li key={i}>{item}</li>
-                                        ))}
-                                    </ul>
+                                {selectedScheme.eligibility && (
+                                    <div className={styles.drawerSection}>
+                                        <h4 className={styles.sectionLabel}>
+                                            <IoShieldCheckmarkOutline size={18} />
+                                            {t("schemesEligibility")}
+                                        </h4>
+                                        <ul className={styles.drawerList}>
+                                            {selectedScheme.eligibility.map((item, i) => (
+                                                <li key={i}>{item}</li>
+                                            ))}
+                                        </ul>
+                                    </div>
+                                )}
+
+                                {selectedScheme.benefits && (
+                                    <div className={styles.drawerSection}>
+                                        <h4 className={styles.sectionLabel}>
+                                            <span style={{ fontSize: "1.1rem" }}>🎁</span>
+                                            {t("schemesBenefits")}
+                                        </h4>
+                                        <ul className={styles.drawerList}>
+                                            {selectedScheme.benefits.map((item, i) => (
+                                                <li key={i}>{item}</li>
+                                            ))}
+                                        </ul>
+                                    </div>
+                                )}
+
+                                {/* Scheme Match Feedback */}
+                                <div style={{ marginTop: '20px', paddingTop: '16px', borderTop: '1px solid #e2e8f0' }}>
+                                    <p style={{ fontSize: '0.88rem', color: '#475569', marginBottom: '8px', fontWeight: 600 }}>
+                                        Was this scheme recommendation helpful?
+                                    </p>
+                                    {schemeFeedback[selectedScheme.id] ? (
+                                        <span style={{ fontSize: '0.85rem', color: '#16a34a', fontWeight: 600 }}>
+                                            {schemeFeedback[selectedScheme.id] === 'yes' ? '👍 Thank you for your feedback!' : '👎 Thank you for your feedback!'}
+                                        </span>
+                                    ) : (
+                                        <div style={{ display: 'flex', gap: '10px' }}>
+                                            <button
+                                                onClick={() => submitSchemeFeedback(selectedScheme.id, true)}
+                                                style={{ background: '#f0fdf4', color: '#16a34a', border: '1px solid #bbf7d0', padding: '6px 14px', borderRadius: '8px', cursor: 'pointer', fontWeight: 600, fontSize: '0.85rem' }}
+                                            >
+                                                👍 Helpful
+                                            </button>
+                                            <button
+                                                onClick={() => submitSchemeFeedback(selectedScheme.id, false)}
+                                                style={{ background: '#fef2f2', color: '#dc2626', border: '1px solid #fecaca', padding: '6px 14px', borderRadius: '8px', cursor: 'pointer', fontWeight: 600, fontSize: '0.85rem' }}
+                                            >
+                                                👎 Not Helpful
+                                            </button>
+                                        </div>
+                                    )}
                                 </div>
 
-                                {/* Benefits */}
-                                <div className={styles.drawerSection}>
-                                    <h4 className={styles.sectionLabel}>
-                                        <span style={{ fontSize: "1.1rem" }}>🎁</span>
-                                        {t("schemesBenefits")}
-                                    </h4>
-                                    <ul className={styles.drawerList}>
-                                        {selectedScheme.benefits.map((item, i) => (
-                                            <li key={i}>{item}</li>
-                                        ))}
-                                    </ul>
-                                </div>
-
-                                {/* Apply CTA */}
                                 {selectedScheme.applyLink && selectedScheme.applyLink !== "#" && (
                                     <a
                                         href={selectedScheme.applyLink}
                                         target="_blank"
                                         rel="noopener noreferrer"
                                         className={styles.applyBtn}
+                                        style={{ marginTop: '16px' }}
                                     >
                                         <IoOpenOutline size={18} />
                                         {t("schemesApplyNow")}
                                     </a>
                                 )}
                                 {selectedScheme.applyLink === "#" && (
-                                    <button className={styles.applyBtnDisabled} disabled>
+                                    <button className={styles.applyBtnDisabled} disabled style={{ marginTop: '16px' }}>
                                         {t("schemesLearnMore")}
                                     </button>
                                 )}

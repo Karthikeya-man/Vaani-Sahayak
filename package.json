@@ -2,6 +2,7 @@
   "name": "vaani-sahayak-app",
   "version": "0.1.0",
   "private": true,
+  "type": "module",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
@@ -12,6 +13,7 @@
     "framer-motion": "^12.34.2",
     "next": "16.1.6",
     "pg": "^8.22.0",
+    "playwright": "^1.62.0",
     "react": "19.2.3",
     "react-dom": "19.2.3",
     "react-icons": "^5.5.0"

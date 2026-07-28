@@ -43,13 +43,11 @@ export function useChat() {
     };
 
     setMessages(prev => [...prev, newMessage]);
-    setSuggestions([]); // Clear previous suggestions
+    setSuggestions([]);
     setLoading(true);
     setError(null);
 
     try {
-      // Build history payload for Gemini format
-      // Need all previous messages excluding this current one
       const historyPayload = messages.map(msg => ({
          role: msg.role === 'user' ? 'user' : 'model',
          parts: [{ text: msg.text }]
@@ -78,7 +76,9 @@ export function useChat() {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
         text: data.reply,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
+        conversationId: data.conversationId,
+        feedback: null
       };
 
       setMessages(prev => [...prev, assistantMessage]);
@@ -86,12 +86,34 @@ export function useChat() {
 
     } catch (err) {
       setError(err.message);
-      // Wait a bit, then clear error
       setTimeout(() => setError(null), 5000);
     } finally {
       setLoading(false);
     }
   }, [messages]);
 
-  return { messages, loading, error, suggestions, sendMessage, clearChat };
+  const sendFeedback = useCallback(async (messageId, conversationId, helpful) => {
+    setMessages(prev => prev.map(msg => {
+      if (msg.id === messageId) {
+        return { ...msg, feedback: helpful ? 'yes' : 'no' };
+      }
+      return msg;
+    }));
+
+    try {
+      await fetch('/api/feedback', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          category: 'chat',
+          conversationId,
+          helpful
+        })
+      });
+    } catch (err) {
+      console.warn('Failed to submit chat feedback:', err.message);
+    }
+  }, []);
+
+  return { messages, loading, error, suggestions, sendMessage, clearChat, sendFeedback };
 }

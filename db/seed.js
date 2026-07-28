@@ -145,6 +145,87 @@ async function seed() {
             }
         }
 
+        // 4. Seed SCHEME and SCHEME_APPLICATION data for testing 7-day deadlines
+        console.log("\n--- Seeding Schemes ---");
+        const today = new Date();
+        const fourDaysFromNow = new Date(today.getTime() + 4 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+        const twelveDaysFromNow = new Date(today.getTime() + 12 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+
+        const schemes = [
+            {
+                title: "PM Fasal Bima Yojana (Kharif Special Subsidy)",
+                category: "insurance",
+                crop: "Cotton",
+                district: "Rajkot",
+                deadline: fourDaysFromNow,
+                description: "Crop insurance premium subsidy for Cotton growers facing pest risks."
+            },
+            {
+                title: "PM Krishi Sinchai Yojana Micro-Irrigation Grant",
+                category: "subsidy",
+                crop: "Wheat",
+                district: "Ludhiana",
+                deadline: twelveDaysFromNow,
+                description: "55% subsidy on drip irrigation setup for Wheat fields."
+            }
+        ];
+
+        for (const s of schemes) {
+            const existingScheme = await client.query(`SELECT id FROM "SCHEME" WHERE title = $1 LIMIT 1`, [s.title]);
+            if (existingScheme.rows.length === 0) {
+                const schemeRes = await client.query(
+                    `INSERT INTO "SCHEME" (title, category, crop, district, deadline, description) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id`,
+                    [s.title, s.category, s.crop, s.district, s.deadline, s.description]
+                );
+                console.log(` -> Added SCHEME: "${s.title}" (Deadline: ${s.deadline})`);
+            } else {
+                // Update deadline to ensure test consistency
+                await client.query(`UPDATE "SCHEME" SET deadline = $2 WHERE title = $1`, [s.title, s.deadline]);
+                console.log(` -> Updated SCHEME: "${s.title}" (Deadline: ${s.deadline})`);
+            }
+        }
+
+        // 5. Seed CROP_SCAN outbreak cluster data (3 scans for Pink Bollworm in Rajkot for Cotton)
+        console.log("\n--- Seeding Crop Disease Outbreak Scans ---");
+        const ramesh = await client.query(`SELECT id FROM "FARMER" WHERE name = 'Ramesh Patel' LIMIT 1`);
+        if (ramesh.rows.length > 0) {
+            const fId = ramesh.rows[0].id;
+            // Clear existing scans to have clean count
+            await client.query(`DELETE FROM "CROP_SCAN" WHERE crop = 'Cotton' AND district = 'Rajkot'`);
+            for (let i = 1; i <= 3; i++) {
+                await client.query(
+                    `INSERT INTO "CROP_SCAN" (farmer_id, crop, disease, district, created_at) VALUES ($1, $2, $3, $4, CURRENT_TIMESTAMP - INTERVAL '${i} hour')`,
+                    [fId, 'Cotton', 'Pink Bollworm', 'Rajkot']
+                );
+            }
+            console.log(` -> Seeded 3 CROP_SCAN entries for "Pink Bollworm" in Cotton (District: Rajkot)`);
+        }
+
+        // 6. Seed APPROVED_TREATMENTS
+        console.log("\n--- Seeding Approved Treatments ---");
+        const approvedTreatments = [
+            {
+                disease: "Pink Bollworm",
+                treatment_dosage: "Spray Emamectin Benzoate 5% SG @ 4g per 10 liters of water. Repeat after 15 days if pest activity persists."
+            },
+            {
+                disease: "Yellow Rust",
+                treatment_dosage: "Apply Propiconazole 25% EC @ 1ml per liter of water at first appearance of yellow pustules."
+            },
+            {
+                disease: "Rice Blast",
+                treatment_dosage: "Spray Tricyclazole 75% WP @ 0.6g per liter of water during early tillering stage."
+            }
+        ];
+
+        for (const t of approvedTreatments) {
+            await client.query(
+                `INSERT INTO "APPROVED_TREATMENTS" (disease, treatment_dosage) VALUES ($1, $2) ON CONFLICT (disease) DO UPDATE SET treatment_dosage = EXCLUDED.treatment_dosage`,
+                [t.disease, t.treatment_dosage]
+            );
+            console.log(` -> Added/Updated APPROVED_TREATMENT for "${t.disease}"`);
+        }
+
         console.log("\n=== Seeding Completed Successfully ===");
     } catch (err) {
         console.error("Seeding Error:", err.message);

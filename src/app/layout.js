@@ -1,5 +1,6 @@
 import "./globals.css";
 import ScrollToTop from "@/components/ScrollToTop";
+import RegisterSW from "@/components/RegisterSW";
 
 export const metadata = {
   title: "Vaani Sahayak | वाणी सहायक — Your Farming Assistant",
@@ -31,6 +32,7 @@ export default function RootLayout({ children }) {
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
       </head>
       <body suppressHydrationWarning>
+        <RegisterSW />
         <ScrollToTop />
         {children}
       </body>

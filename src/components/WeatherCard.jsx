@@ -7,7 +7,7 @@ import { IoWarningOutline, IoWaterOutline, IoTimerOutline, IoLeafOutline } from 
 import { FiWind } from "react-icons/fi";
 
 export default function WeatherCard({ district = null }) {
-  const { weather, loading, error, fetchWeather, fetchByGPS } = useWeather();
+  const { weather, loading, error, isCached, cachedAt, fetchWeather, fetchByGPS } = useWeather();
 
   useEffect(() => {
     if (district) {
@@ -45,8 +45,28 @@ export default function WeatherCard({ district = null }) {
 
   const { current, location, farming_advisory, forecast, air_quality_index } = weather;
 
+  const formattedCachedTime = cachedAt ? new Date(cachedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
+
   return (
     <div className={styles.card}>
+      {isCached && (
+        <div style={{
+          backgroundColor: '#fef3c7',
+          color: '#92400e',
+          border: '1px solid #fde68a',
+          padding: '6px 12px',
+          borderRadius: '8px',
+          fontSize: '0.8rem',
+          marginBottom: '10px',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '6px',
+          fontWeight: 600
+        }}>
+          ⚡ Showing cached data from {formattedCachedTime || 'offline cache'}
+        </div>
+      )}
+
       {/* Top Header */}
       <div className={styles.header}>
         <div className={styles.location}>

@@ -1,5 +1,6 @@
 // Uses standard Web API Response (supported natively by Next.js App Router)
 import { classifyIntent, directLookup } from '../../../lib/agent/intentRouter.js';
+import { pool } from '../../../lib/db/db.js';
 
 export const dynamic = 'force-dynamic';
 
@@ -40,8 +41,22 @@ async function handleIVRRequest(request) {
     });
 
     const digits = params.Digits || params.digits || params.DigitsKey;
+    const feedbackDigit = params.feedbackDigit || params.FeedbackDigits;
+    const conversationIdParam = params.conversationId;
     const selectedLanguage = LANGUAGE_MAP[digits] || params.language || params.lang || 'hi';
     const query = params.query || params.SpeechResult || params.Speech || params.message || params.CallFrom;
+
+    // Handle IVR feedback DTMF press (1 = Yes / Helpful, 2 = No / Unhelpful)
+    if (feedbackDigit && conversationIdParam) {
+        const isHelpful = feedbackDigit === '1';
+        try {
+            await pool.query(`UPDATE "CONVERSATION" SET helpful = $1 WHERE id = $2`, [isHelpful, conversationIdParam]);
+        } catch (e) {}
+        const thankYouText = isHelpful ? 'Thank you for your positive feedback!' : 'Thank you for your feedback. We will work to improve.';
+        return new Response(`<Response><Say>${thankYouText}</Say></Response>`, {
+            headers: { 'Content-Type': 'text/xml' }
+        });
+    }
 
     // 1. Handle DTMF / Language Selection step if no user query present
     if (digits && !query) {
@@ -105,6 +120,18 @@ async function handleIVRRequest(request) {
         }
     }
 
+    let conversationId = null;
+    try {
+        const dbRes = await pool.query(
+            `INSERT INTO "CONVERSATION" (channel, user_message, assistant_response)
+             VALUES ('ivr', $1, $2) RETURNING id`,
+            [query, responseText]
+        );
+        conversationId = dbRes.rows[0]?.id || null;
+    } catch (e) {
+        console.warn('[IVR API] Error logging to CONVERSATION:', e.message);
+    }
+
     // Return Exotel Voice XML or JSON if requested
     const acceptHeader = request.headers.get('accept') || '';
     if (acceptHeader.includes('application/json')) {
@@ -112,11 +139,18 @@ async function handleIVRRequest(request) {
             reply: responseText,
             intent,
             tool,
-            language: selectedLanguage
+            language: selectedLanguage,
+            conversationId
         });
     }
 
-    const xmlResponse = `<Response><Say>${responseText}</Say></Response>`;
+    const xmlResponse = `<Response>
+        <Say>${responseText}</Say>
+        <Gather numDigits="1" action="/api/ivr?conversationId=${conversationId}" method="POST">
+            <Say>Was this response helpful? Press 1 for Yes, Press 2 for No.</Say>
+        </Gather>
+    </Response>`;
+
     return new Response(xmlResponse, {
         headers: { 'Content-Type': 'text/xml' }
     });

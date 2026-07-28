@@ -12,8 +12,7 @@ import LanguageModal from "@/components/LanguageModal";
 import LocationModal from "@/components/LocationModal";
 import styles from "@/styles/Market.module.css";
 
-// MOCK DATA for Market Prices (ONDC / eNAM style)
-const MOCK_PRICES = [
+const MOCK_PRICES_FALLBACK = [
     { id: 1, crop: "Wheat", mandi: "Nagpur APMC", price: 2450, change: 50, trend: "up", unit: "per Quintal" },
     { id: 2, crop: "Cotton", mandi: "Wardha Mandi", price: 6800, change: -120, trend: "down", unit: "per Quintal" },
     { id: 3, crop: "Soyabean", mandi: "Amravati APMC", price: 4200, change: 0, trend: "flat", unit: "per Quintal" },
@@ -28,13 +27,54 @@ function MarketContent() {
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const [activeTab, setActiveTab] = useState("home");
     const [loading, setLoading] = useState(true);
+    const [prices, setPrices] = useState(MOCK_PRICES_FALLBACK);
+    const [isCached, setIsCached] = useState(false);
+    const [cachedAt, setCachedAt] = useState(null);
 
     const [showLangModal, setShowLangModal] = useState(false);
     const [showLocModal, setShowLocModal] = useState(false);
 
     useEffect(() => {
-        const timer = setTimeout(() => setLoading(false), 800);
-        return () => clearTimeout(timer);
+        let isMounted = true;
+        async function loadMarketData() {
+            setLoading(true);
+            try {
+                const res = await fetch("/api/market");
+                const data = await res.json();
+                if (isMounted && res.ok && data.prices) {
+                    setPrices(data.prices);
+                    const cachedHeader = res.headers.get("X-Cached-At");
+                    const isOffline = typeof navigator !== "undefined" && !navigator.onLine;
+                    if (isOffline || cachedHeader || data.fetchedAt) {
+                        setIsCached(isOffline || !!cachedHeader);
+                        setCachedAt(cachedHeader || data.fetchedAt || new Date().toISOString());
+                    } else {
+                        setIsCached(false);
+                        setCachedAt(null);
+                    }
+                    localStorage.setItem("vaani_cached_market", JSON.stringify({
+                        prices: data.prices,
+                        timestamp: cachedHeader || data.fetchedAt || new Date().toISOString()
+                    }));
+                }
+            } catch (err) {
+                console.warn("[Market Page] Fetch failed, checking local backup:", err.message);
+                try {
+                    const saved = localStorage.getItem("vaani_cached_market");
+                    if (saved && isMounted) {
+                        const parsed = JSON.parse(saved);
+                        setPrices(parsed.prices);
+                        setIsCached(true);
+                        setCachedAt(parsed.timestamp);
+                    }
+                } catch (e) {}
+            } finally {
+                if (isMounted) setLoading(false);
+            }
+        }
+
+        loadMarketData();
+        return () => { isMounted = false; };
     }, []);
 
     const handleTabChange = (tab) => {
@@ -58,6 +98,8 @@ function MarketContent() {
         if (!location.district) return baseMandi;
         return `${translatedLocation.district || location.district} Mandi`;
     };
+
+    const formattedTime = cachedAt ? new Date(cachedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
 
     return (
         <div className={styles.appShell}>
@@ -107,12 +149,18 @@ function MarketContent() {
                         </div>
                     ) : (
                         <div className={styles.marketContainer}>
+                            {isCached && (
+                                <div className={styles.infoBanner} style={{ backgroundColor: '#fef3c7', color: '#92400e', borderColor: '#fde68a', fontWeight: 600 }}>
+                                    ⚡ Showing cached data from {formattedTime || 'offline cache'}
+                                </div>
+                            )}
+
                             <div className={styles.infoBanner}>
                                 ℹ️ Prices sync daily with eNAM & ONDC networks for accurate trading in {translatedLocation.state || location.state}.
                             </div>
 
                             <div className={styles.priceGrid}>
-                                {MOCK_PRICES.map((item, i) => (
+                                {prices.map((item, i) => (
                                     <motion.div
                                         key={item.id}
                                         className={styles.priceCard}

@@ -107,6 +107,7 @@ export async function GET(request) {
       sunset: currentData.sys.sunset,
     };
 
+    const fetchedAt = new Date().toISOString();
     const responseData = {
       location: {
         city: currentData.name,
@@ -123,10 +124,18 @@ export async function GET(request) {
         icon: item.weather[0].icon,
         rain: item.rain ? item.rain['3h'] || 0 : 0
       })) || [],
-      air_quality_index: aqiData?.list?.[0]?.main?.aqi || null
+      air_quality_index: aqiData?.list?.[0]?.main?.aqi || null,
+      fetchedAt
     };
 
-    return NextResponse.json(responseData);
+    return new Response(JSON.stringify(responseData), {
+      status: 200,
+      headers: {
+        'Content-Type': 'application/json',
+        'Cache-Control': 'public, max-age=1800',
+        'X-Cached-At': fetchedAt
+      }
+    });
 
   } catch (error) {
     console.error('Weather API Error:', error);

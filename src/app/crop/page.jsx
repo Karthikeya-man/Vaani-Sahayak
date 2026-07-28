@@ -1,13 +1,14 @@
 "use client";
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { IoArrowBack, IoCameraOutline, IoImageOutline, IoCheckmarkCircleOutline } from "react-icons/io5";
+import { IoArrowBack, IoCameraOutline, IoImageOutline, IoCheckmarkCircleOutline, IoCloudUploadOutline, IoCheckmarkDoneOutline } from "react-icons/io5";
 import { useRouter } from "next/navigation";
 import { useLanguage, LanguageProvider } from "@/context/LanguageContext";
 import Header from "@/components/Header";
 import Sidebar from "@/components/Sidebar";
 import Footer from "@/components/Footer";
 import styles from "@/styles/Crop.module.css";
+import { savePendingScan, getPendingScans, syncPendingScans } from "@/lib/offlineQueue";
 
 function CropContent() {
     const { t } = useLanguage();
@@ -18,7 +19,33 @@ function CropContent() {
     // UI States: "idle" | "scanning" | "result"
     const [scanState, setScanState] = useState("idle");
     const [imagePreview, setImagePreview] = useState(null);
+    const [isOfflineScan, setIsOfflineScan] = useState(false);
+    const [scanId, setScanId] = useState(null);
+    const [feedbackGiven, setFeedbackGiven] = useState(null);
+    const [pendingCount, setPendingCount] = useState(0);
+    const [syncNotice, setSyncNotice] = useState(null);
     const fileInputRef = useRef(null);
+
+    const checkPendingQueue = async () => {
+        const pending = await getPendingScans();
+        setPendingCount(pending.length);
+    };
+
+    useEffect(() => {
+        checkPendingQueue();
+
+        const handleOnline = async () => {
+            const result = await syncPendingScans();
+            if (result.synced > 0) {
+                setSyncNotice(`Synced ${result.synced} offline crop scan(s) successfully! ✅`);
+                setTimeout(() => setSyncNotice(null), 5000);
+            }
+            checkPendingQueue();
+        };
+
+        window.addEventListener('online', handleOnline);
+        return () => window.removeEventListener('online', handleOnline);
+    }, []);
 
     const handleTabChange = (tab) => {
         setActiveTab(tab);
@@ -30,21 +57,85 @@ function CropContent() {
         if (file) {
             const url = URL.createObjectURL(file);
             setImagePreview(url);
-            startScan();
+            startScan(url);
         }
     };
 
-    const startScan = () => {
+    const startScan = async (imgUrl) => {
         setScanState("scanning");
-        // Mock a 3 second scan process
-        setTimeout(() => {
+        setFeedbackGiven(null);
+
+        // Simulate 2s AI biomarker scan
+        setTimeout(async () => {
+            const isOffline = typeof navigator !== 'undefined' && !navigator.onLine;
+
+            const scanPayload = {
+                id: `scan_${Date.now()}`,
+                crop: 'Cotton',
+                disease: 'Cotton Leaf Curl Virus',
+                district: 'Rajkot',
+                image: imgUrl
+            };
+
+            if (isOffline) {
+                try {
+                    await savePendingScan(scanPayload);
+                    setIsOfflineScan(true);
+                    setScanId(scanPayload.id);
+                    checkPendingQueue();
+                } catch (e) {
+                    console.warn('Failed saving offline scan:', e);
+                }
+            } else {
+                try {
+                    const res = await fetch('/api/crop-scan', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(scanPayload)
+                    });
+                    const data = await res.json();
+                    if (res.ok && data.scanId) {
+                        setScanId(data.scanId);
+                        setIsOfflineScan(false);
+                    } else {
+                        // Fallback to offline queue if server error
+                        await savePendingScan(scanPayload);
+                        setIsOfflineScan(true);
+                    }
+                } catch (err) {
+                    await savePendingScan(scanPayload);
+                    setIsOfflineScan(true);
+                    checkPendingQueue();
+                }
+            }
+
             setScanState("result");
-        }, 3000);
+        }, 2000);
+    };
+
+    const handleDiagnosisFeedback = async (helpful) => {
+        setFeedbackGiven(helpful ? 'yes' : 'no');
+        try {
+            await fetch('/api/feedback', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    category: 'crop-scan',
+                    scanId: scanId,
+                    helpful: helpful
+                })
+            });
+        } catch (e) {
+            console.warn('Failed to submit crop scan feedback:', e.message);
+        }
     };
 
     const resetScanner = () => {
         setImagePreview(null);
         setScanState("idle");
+        setIsOfflineScan(false);
+        setScanId(null);
+        setFeedbackGiven(null);
     };
 
     return (
@@ -71,6 +162,20 @@ function CropContent() {
                         <h1 className={styles.pageTitle}>{t("cropTitle")}</h1>
                     </div>
 
+                    {syncNotice && (
+                        <div style={{ backgroundColor: '#dcfce7', color: '#15803d', border: '1px solid #86efac', padding: '10px 14px', borderRadius: '10px', marginBottom: '14px', fontWeight: 600, fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <IoCheckmarkDoneOutline size={20} />
+                            {syncNotice}
+                        </div>
+                    )}
+
+                    {pendingCount > 0 && (
+                        <div style={{ backgroundColor: '#fef3c7', color: '#92400e', border: '1px solid #fde68a', padding: '8px 14px', borderRadius: '10px', marginBottom: '14px', fontWeight: 600, fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <IoCloudUploadOutline size={18} />
+                            {pendingCount} scan(s) queued offline — will auto-upload when back online.
+                        </div>
+                    )}
+
                     <div className={styles.scannerContainer}>
                         <AnimatePresence mode="wait">
                             {/* IDLE STATE */}
@@ -92,7 +197,7 @@ function CropContent() {
                                     <input
                                         type="file"
                                         accept="image/*"
-                                        capture="environment" /* Requests back camera on mobile */
+                                        capture="environment"
                                         className={styles.hiddenInput}
                                         ref={fileInputRef}
                                         onChange={handleFileChange}
@@ -103,7 +208,6 @@ function CropContent() {
                                             <IoCameraOutline size={20} /> Open Camera
                                         </button>
                                         <button className={styles.secondaryBtn} onClick={() => {
-                                            // Optional: Remove capture attr to force gallery picker
                                             fileInputRef.current?.removeAttribute('capture');
                                             fileInputRef.current?.click();
                                         }}>
@@ -141,6 +245,12 @@ function CropContent() {
                                     animate={{ opacity: 1, y: 0 }}
                                     transition={{ duration: 0.4 }}
                                 >
+                                    {isOfflineScan && (
+                                        <div style={{ backgroundColor: '#fff7ed', color: '#c2410c', border: '1px solid #ffedd5', padding: '10px 14px', borderRadius: '10px', marginBottom: '14px', fontWeight: 600, fontSize: '0.88rem' }}>
+                                            📶 Saved offline: will upload to server when back online.
+                                        </div>
+                                    )}
+
                                     <div className={styles.resultHeader}>
                                         <img src={imagePreview} alt="Crop preview" className={styles.smallPreview} />
                                         <div className={styles.diseaseInfo}>
@@ -165,6 +275,33 @@ function CropContent() {
                                             <div className={styles.actionLabel}>Chemical Control</div>
                                             <p>Spray Imidacloprid 17.8 SL at 0.5ml/liter of water to control the whitefly vector.</p>
                                         </div>
+                                    </div>
+
+                                    {/* Diagnosis Feedback Section */}
+                                    <div style={{ backgroundColor: '#f8fafc', padding: '16px', borderRadius: '12px', marginBottom: '16px', border: '1px solid #e2e8f0' }}>
+                                        <p style={{ fontWeight: 600, color: '#334155', marginBottom: '8px', fontSize: '0.9rem' }}>
+                                            Was this disease diagnosis helpful?
+                                        </p>
+                                        {feedbackGiven ? (
+                                            <span style={{ color: '#16a34a', fontWeight: 600, fontSize: '0.88rem' }}>
+                                                {feedbackGiven === 'yes' ? '👍 Thank you for your feedback!' : '👎 Thank you for your feedback!'}
+                                            </span>
+                                        ) : (
+                                            <div style={{ display: 'flex', gap: '10px' }}>
+                                                <button
+                                                    onClick={() => handleDiagnosisFeedback(true)}
+                                                    style={{ background: '#f0fdf4', color: '#16a34a', border: '1px solid #bbf7d0', padding: '8px 16px', borderRadius: '8px', cursor: 'pointer', fontWeight: 600, fontSize: '0.88rem' }}
+                                                >
+                                                    👍 Helpful
+                                                </button>
+                                                <button
+                                                    onClick={() => handleDiagnosisFeedback(false)}
+                                                    style={{ background: '#fef2f2', color: '#dc2626', border: '1px solid #fecaca', padding: '8px 16px', borderRadius: '8px', cursor: 'pointer', fontWeight: 600, fontSize: '0.88rem' }}
+                                                >
+                                                    👎 Not Helpful
+                                                </button>
+                                            </div>
+                                        )}
                                     </div>
 
                                     <button className={styles.primaryBtn} onClick={resetScanner}>

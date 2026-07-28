@@ -4,6 +4,8 @@ export function useWeather(initialLocation = null) {
   const [weather, setWeather] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [isCached, setIsCached] = useState(false);
+  const [cachedAt, setCachedAt] = useState(null);
 
   const fetchWeather = useCallback(async ({ lat, lon, city }) => {
     setLoading(true);
@@ -26,8 +28,41 @@ export function useWeather(initialLocation = null) {
         throw new Error(data.error || 'Failed to fetch weather');
       }
 
+      const cachedHeader = response.headers.get('X-Cached-At');
+      const isOffline = typeof navigator !== 'undefined' && !navigator.onLine;
+
+      if (isOffline || cachedHeader || data.fetchedAt) {
+        setIsCached(isOffline || !!cachedHeader);
+        setCachedAt(cachedHeader || data.fetchedAt || new Date().toISOString());
+      } else {
+        setIsCached(false);
+        setCachedAt(null);
+      }
+
       setWeather(data);
+
+      // Store in local backup
+      try {
+        localStorage.setItem('vaani_cached_weather', JSON.stringify({
+          data,
+          timestamp: cachedHeader || data.fetchedAt || new Date().toISOString()
+        }));
+      } catch (e) {}
+
     } catch (err) {
+      // Offline fallback from localStorage
+      try {
+        const saved = localStorage.getItem('vaani_cached_weather');
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          setWeather(parsed.data);
+          setIsCached(true);
+          setCachedAt(parsed.timestamp);
+          setError(null);
+          return;
+        }
+      } catch (e) {}
+
       setError(err.message);
       setWeather(null);
     } finally {
@@ -63,15 +98,14 @@ export function useWeather(initialLocation = null) {
   useEffect(() => {
     if (initialLocation) {
       if (initialLocation.lat && initialLocation.lon) {
-         fetchWeather({ lat: initialLocation.lat, lon: initialLocation.lon })
+         fetchWeather({ lat: initialLocation.lat, lon: initialLocation.lon });
       } else if (initialLocation.city) {
          fetchWeather({ city: initialLocation.city });
       } else {
          fetchByGPS();
       }
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // Run only once on mount
+  }, []);
 
-  return { weather, loading, error, fetchWeather, fetchByGPS };
+  return { weather, loading, error, isCached, cachedAt, fetchWeather, fetchByGPS };
 }

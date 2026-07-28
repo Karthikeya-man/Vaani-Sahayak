@@ -264,6 +264,12 @@ function ProfileContent({ onBack }) {
                         </div>
                     </div>
 
+                    <div className={styles.divider} />
+                    <div className={styles.sectionLabel}>📋 MY GOVERNMENT SCHEME APPLICATIONS</div>
+                    <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '1rem', marginBottom: '1.5rem' }}>
+                        <ApplicationsList farmerId={farmerId} />
+                    </div>
+
                     <motion.button className={styles.saveBtn} onClick={handleSave} whileTap={{ scale: 0.97 }}>
                         <IoSaveOutline /> {t("saveProfile")}
                     </motion.button>
@@ -279,6 +285,62 @@ function ProfileContent({ onBack }) {
                 </div>
             </div>
         </motion.div>
+    );
+}
+
+function ApplicationsList({ farmerId }) {
+    const [applications, setApplications] = useState([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        fetch(`/api/admin/review-queue`)
+            .then(res => res.json())
+            .then(data => {
+                if (data && data.items) {
+                    const farmerApps = data.items.filter(item => item.farmer_id === farmerId && item.type === 'scheme');
+                    setApplications(farmerApps);
+                }
+            })
+            .catch(err => console.warn('Could not fetch farmer applications:', err))
+            .finally(() => setLoading(false));
+    }, [farmerId]);
+
+    if (loading) return <div style={{ fontSize: '0.85rem', color: '#64748b' }}>Loading scheme applications...</div>;
+
+    if (applications.length === 0) {
+        return (
+            <div style={{ fontSize: '0.9rem', color: '#64748b', textAlign: 'center', padding: '0.75rem 0' }}>
+                No active scheme applications found.
+            </div>
+        );
+    }
+
+    const badgeColor = {
+        pending_confirmation: '#f59e0b',
+        submitted: '#10b981',
+        failed: '#ef4444',
+        needs_review: '#6366f1'
+    };
+
+    return (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+            {applications.map((app) => (
+                <div key={app.review_id} style={{ background: '#ffffff', padding: '0.75rem 1rem', borderRadius: '8px', border: '1px solid #cbd5e1', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div>
+                        <div style={{ fontWeight: '600', fontSize: '0.95rem', color: '#0f172a' }}>{app.scheme_title || 'Govt Subsidy Scheme'}</div>
+                        <div style={{ fontSize: '0.8rem', color: '#64748b' }}>Applied: {new Date(app.escalated_at).toLocaleDateString()}</div>
+                        {app.scheme_error_reason && <div style={{ fontSize: '0.8rem', color: '#ef4444', marginTop: '0.2rem' }}>Error: {app.scheme_error_reason}</div>}
+                    </div>
+                    <span style={{
+                        padding: '0.25rem 0.6rem', borderRadius: '12px', fontSize: '0.75rem', fontWeight: '700', textTransform: 'uppercase',
+                        background: (badgeColor[app.scheme_app_status || app.review_status] || '#94a3b8') + '20',
+                        color: badgeColor[app.scheme_app_status || app.review_status] || '#475569'
+                    }}>
+                        ● {app.scheme_app_status || app.review_status}
+                    </span>
+                </div>
+            ))}
+        </div>
     );
 }
 

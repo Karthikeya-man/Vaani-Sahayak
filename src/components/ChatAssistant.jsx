@@ -13,7 +13,8 @@ const QUICK_STARTS = [
 ];
 
 export default function ChatAssistant({ language = "english", context = {} }) {
-  const { messages, loading, error, suggestions, sendMessage, clearChat } = useChat();
+  const { messages, loading, error, suggestions, sendMessage, clearChat, sendFeedback } = useChat();
+
   const [inputText, setInputText] = useState("");
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
@@ -92,7 +93,53 @@ export default function ChatAssistant({ language = "english", context = {} }) {
                 <div className={`${styles.bubble} ${msg.role === 'user' ? styles.bubbleUser : styles.bubbleAssistant}`}>
                   <p className={styles.messageText}>{msg.text}</p>
                 </div>
-                <span className={styles.timestamp}>{formatTime(msg.timestamp)}</span>
+                
+                {msg.role === 'assistant' && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '4px', marginLeft: '4px' }}>
+                    <span className={styles.timestamp}>{formatTime(msg.timestamp)}</span>
+                    <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                      <button
+                        onClick={() => sendFeedback(msg.id, msg.conversationId, true)}
+                        title="Helpful"
+                        style={{
+                          background: msg.feedback === 'yes' ? '#dcfce7' : 'transparent',
+                          color: msg.feedback === 'yes' ? '#15803d' : '#64748b',
+                          border: 'none',
+                          borderRadius: '4px',
+                          padding: '2px 6px',
+                          cursor: 'pointer',
+                          fontSize: '0.8rem',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '2px'
+                        }}
+                      >
+                        👍 {msg.feedback === 'yes' && 'Helpful'}
+                      </button>
+                      <button
+                        onClick={() => sendFeedback(msg.id, msg.conversationId, false)}
+                        title="Not Helpful"
+                        style={{
+                          background: msg.feedback === 'no' ? '#fee2e2' : 'transparent',
+                          color: msg.feedback === 'no' ? '#b91c1c' : '#64748b',
+                          border: 'none',
+                          borderRadius: '4px',
+                          padding: '2px 6px',
+                          cursor: 'pointer',
+                          fontSize: '0.8rem',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '2px'
+                        }}
+                      >
+                        👎 {msg.feedback === 'no' && 'Not helpful'}
+                      </button>
+                    </div>
+                  </div>
+                )}
+                {msg.role === 'user' && (
+                  <span className={styles.timestamp}>{formatTime(msg.timestamp)}</span>
+                )}
               </div>
             ))}
 

@@ -55,11 +55,16 @@ async function runMigration() {
             );
         `);
 
-        const sqlPath = path.resolve('./db/migrations/001_create_farmer_plot_and_preferences.sql');
-        const sqlContent = fs.readFileSync(sqlPath, 'utf-8');
+        const migrationsDir = path.resolve('./db/migrations');
+        const files = fs.readdirSync(migrationsDir).filter(f => f.endsWith('.sql')).sort();
 
-        await client.query(sqlContent);
-        console.log("=== Migration Applied Successfully! ===");
+        for (const file of files) {
+            console.log(`=== Running Migration: ${file} ===`);
+            const sqlPath = path.join(migrationsDir, file);
+            const sqlContent = fs.readFileSync(sqlPath, 'utf-8');
+            await client.query(sqlContent);
+        }
+        console.log("=== All Migrations Applied Successfully! ===");
     } catch (err) {
         console.error("Migration Error:", err.message);
         throw err;

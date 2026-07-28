@@ -1,6 +1,7 @@
 // Uses standard Web API Response (supported natively by Next.js App Router)
 import { classifyIntent, directLookup } from '../../../lib/agent/intentRouter.js';
 import { getFarmerState } from '../../../lib/db/farmerState.js';
+import { pool } from '../../../lib/db/db.js';
 
 export const dynamic = 'force-dynamic';
 
@@ -51,8 +52,26 @@ export async function POST(request) {
             return Response.json({ error: 'Message is required' }, { status: 400 });
         }
 
-        // 1. Fetch Farmer DB State (plot + preferences)
         const targetFarmerId = farmerId || context.farmerId || DEFAULT_FARMER_ID;
+
+        // Check if user is confirming a pending scheme application
+        const lowerMsg = message.trim().toLowerCase();
+        if (lowerMsg === 'yes' || lowerMsg === 'confirm' || lowerMsg === '1' || lowerMsg === 'apply') {
+            const confirmRes = await confirmSchemeApplication(targetFarmerId);
+            if (confirmRes.success) {
+                return Response.json({
+                    reply: `Your application has been confirmed and submitted to the government portal! Reference ID: ${confirmRes.applicationRef || 'GOV_2026_SUCCESS'}.`,
+                    suggested_questions: ["Check my application status", "What are the scheme benefits?"]
+                });
+            } else if (confirmRes.queueId) {
+                return Response.json({
+                    reply: `Your application submission encountered a portal issue. Our agricultural officer has been notified to complete your application manually within 24 hours.`,
+                    suggested_questions: ["Check my application status", "Contact support"]
+                });
+            }
+        }
+
+        // 1. Fetch Farmer DB State (plot + preferences)
         let farmerDetailsString = '';
 
         try {
@@ -257,7 +276,19 @@ function cleanResponseForDisplay(text, language) {
         const reply = parsed.cleanedText;
         const suggested_questions = parsed.suggestions;
 
-        return Response.json({ reply, suggested_questions });
+        let conversationId = null;
+        try {
+            const dbRes = await pool.query(
+                `INSERT INTO "CONVERSATION" (farmer_id, channel, user_message, assistant_response)
+                 VALUES ($1, 'chat', $2, $3) RETURNING id`,
+                [targetFarmerId, message, reply]
+            );
+            conversationId = dbRes.rows[0]?.id || null;
+        } catch (dbErr) {
+            console.warn('[Chat API] Could not log to CONVERSATION table:', dbErr.message);
+        }
+
+        return Response.json({ reply, suggested_questions, conversationId });
 
     } catch (error) {
         console.error('Chat API Error:', error);
