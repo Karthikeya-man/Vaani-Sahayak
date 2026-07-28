@@ -1,35 +1,35 @@
-import { NextResponse } from 'next/server';
+import { signAdminJWT } from '../../../../lib/auth/jwt.js';
+
+export const dynamic = 'force-dynamic';
 
 export async function POST(request) {
     try {
         const body = await request.json();
         const { username, password } = body;
 
-        const validUsername = process.env.ADMIN_USERNAME;
-        const validPassword = process.env.ADMIN_PASSWORD;
+        const ADMIN_USER = process.env.ADMIN_USER || 'admin';
+        const ADMIN_PASS = process.env.ADMIN_PASS || 'admin123';
 
-        // In a real application, you would use a robust database and hashing (like bcrypt)
-        // Here, we compare against environment variables for simplicity in this MVP
-        if (username === validUsername && password === validPassword) {
-            // Generate a simple token (in production, use JWT or similar secure sessions)
-            const token = Buffer.from(`${username}:${Date.now()}`).toString('base64');
+        if (username === ADMIN_USER && password === ADMIN_PASS) {
+            const token = await signAdminJWT({ username: ADMIN_USER, role: 'admin' });
 
-            return NextResponse.json({
-                success: true,
-                token: token,
-                message: "Authentication successful"
-            }, { status: 200 });
-        } else {
-            return NextResponse.json({
-                success: false,
-                message: "Invalid username or password"
-            }, { status: 401 });
+            const headers = new Headers();
+            headers.append('Content-Type', 'application/json');
+            // Set HTTP-only, Secure, SameSite=Lax Cookie
+            headers.append(
+                'Set-Cookie',
+                `admin_token=${token}; Path=/; HttpOnly; SameSite=Lax; Max-Age=86400`
+            );
+
+            return new Response(
+                JSON.stringify({ success: true, message: 'Authentication successful' }),
+                { status: 200, headers }
+            );
         }
-    } catch (error) {
-        console.error("Login API Error:", error);
-        return NextResponse.json({
-            success: false,
-            message: "An error occurred during authentication"
-        }, { status: 500 });
+
+        return Response.json({ success: false, error: 'Invalid admin credentials' }, { status: 401 });
+
+    } catch (err) {
+        return Response.json({ error: err.message || 'Login failed' }, { status: 500 });
     }
 }

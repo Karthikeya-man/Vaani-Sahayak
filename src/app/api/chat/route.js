@@ -3,6 +3,7 @@ import { classifyIntent, directLookup } from '../../../lib/agent/intentRouter.js
 import { getFarmerState } from '../../../lib/db/farmerState.js';
 import { pool } from '../../../lib/db/db.js';
 import { confirmSchemeApplication } from '../../../lib/agent/schemeFormFiller.js';
+import { checkRateLimit, rateLimitExceededResponse } from '../../../lib/rateLimiter.js';
 
 export const dynamic = 'force-dynamic';
 
@@ -39,6 +40,11 @@ SUGGESTIONS:["Question 1?","Question 2?","Question 3?"]
 `;
 
 export async function POST(request) {
+    const rateCheck = checkRateLimit(request, { limit: 10, prefix: 'chat' });
+    if (!rateCheck.allowed) {
+        return rateLimitExceededResponse(rateCheck);
+    }
+
     if (!GEMINI_API_KEY) {
         return Response.json({ error: 'Gemini API key is not configured' }, { status: 500 });
     }

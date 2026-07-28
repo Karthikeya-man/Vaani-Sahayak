@@ -53,10 +53,16 @@ export default function AdminPage() {
     const chatEndRef = useRef(null);
 
     useEffect(() => {
-        const token = sessionStorage.getItem("admin_token");
-        if (token) {
-            setIsAuthenticated(true);
+        async function checkAuth() {
+            try {
+                const res = await fetch("/api/admin/check-auth");
+                const data = await res.json();
+                if (res.ok && data.authenticated) {
+                    setIsAuthenticated(true);
+                }
+            } catch (e) {}
         }
+        checkAuth();
     }, []);
 
     const fetchFeedbackData = async () => {
@@ -108,16 +114,22 @@ export default function AdminPage() {
             const data = await res.json();
 
             if (res.ok && data.success) {
-                sessionStorage.setItem("admin_token", data.token);
                 setIsAuthenticated(true);
             } else {
-                setLoginError(data.message || "Invalid credentials");
+                setLoginError(data.error || data.message || "Invalid credentials");
             }
         } catch (error) {
             setLoginError("Failed to connect to server");
         } finally {
             setIsLoggingIn(false);
         }
+    };
+
+    const handleLogout = async () => {
+        try {
+            await fetch("/api/admin/logout", { method: "POST" });
+        } catch (e) {}
+        setIsAuthenticated(false);
     };
 
     useEffect(() => {
@@ -252,7 +264,7 @@ export default function AdminPage() {
                             💬 Live Support
                         </button>
                     </div>
-                    <button onClick={() => { sessionStorage.removeItem("admin_token"); setIsAuthenticated(false); }} className={styles.farmerLink} style={{ marginRight: '5px' }}>Logout</button>
+                    <button onClick={handleLogout} className={styles.farmerLink} style={{ marginRight: '5px' }}>Logout</button>
                     <Link href="/" className={styles.farmerLink}>← Farmer App</Link>
                     <div className={styles.adminBadge}>👤 Admin</div>
                 </div>

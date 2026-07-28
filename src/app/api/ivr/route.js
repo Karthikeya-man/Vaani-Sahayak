@@ -1,6 +1,6 @@
-// Uses standard Web API Response (supported natively by Next.js App Router)
 import { classifyIntent, directLookup } from '../../../lib/agent/intentRouter.js';
 import { pool } from '../../../lib/db/db.js';
+import { checkRateLimit, rateLimitExceededResponse } from '../../../lib/rateLimiter.js';
 
 export const dynamic = 'force-dynamic';
 
@@ -19,6 +19,11 @@ Keep answers VERY SHORT, SIMPLE, and directly speakable over a phone call (maxim
 Do not use Markdown, bullet points, or complex formatting.`;
 
 async function handleIVRRequest(request) {
+    const rateCheck = checkRateLimit(request, { limit: 10, prefix: 'ivr' });
+    if (!rateCheck.allowed) {
+        return rateLimitExceededResponse(rateCheck);
+    }
+
     let params = {};
 
     try {
