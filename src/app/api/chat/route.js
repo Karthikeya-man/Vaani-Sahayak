@@ -2,6 +2,7 @@
 import { classifyIntent, directLookup } from '../../../lib/agent/intentRouter.js';
 import { getFarmerState } from '../../../lib/db/farmerState.js';
 import { pool } from '../../../lib/db/db.js';
+import { confirmSchemeApplication } from '../../../lib/agent/schemeFormFiller.js';
 
 export const dynamic = 'force-dynamic';
 
