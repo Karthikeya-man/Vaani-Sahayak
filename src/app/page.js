@@ -6,6 +6,7 @@ import {
 } from "react-icons/io5";
 import { useRouter } from "next/navigation";
 import { LanguageProvider, useLanguage } from "@/context/LanguageContext";
+import { LocationProvider } from "@/context/LocationContext";
 import SplashScreen from "@/components/SplashScreen";
 import Header from "@/components/Header";
 import Sidebar from "@/components/Sidebar";
@@ -14,8 +15,10 @@ import VoiceBanner from "@/components/VoiceBanner";
 import FeatureCard from "@/components/FeatureCard";
 import UpdatesCarousel from "@/components/UpdatesCarousel";
 import LanguageModal from "@/components/LanguageModal";
+import LocationModal from "@/components/LocationModal";
 import ProfilePage from "@/app/profile/page";
 import WebFooter from "@/components/WebFooter";
+import NearbyActivityCard from "@/components/NearbyActivityCard";
 import styles from "@/styles/Home.module.css";
 
 const FEATURES = [
@@ -27,20 +30,13 @@ const FEATURES = [
   { icon: <IoHelpCircleOutline />, titleKey: "helpTitle", subKey: "helpSub", colorClass: "help", route: "/help" },
 ];
 
-import { LocationProvider } from "@/context/LocationContext";
-import LocationModal from "@/components/LocationModal";
-
-// ... existing code
-
 function HomeContent() {
   const { t, lang, setLang } = useLanguage();
   const router = useRouter();
   const [showSplash, setShowSplash] = useState(true);
 
   useEffect(() => {
-    // Only show splash screen once per browser session
     if (sessionStorage.getItem("splashShown")) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
       setShowSplash(false);
     }
   }, []);
@@ -57,7 +53,6 @@ function HomeContent() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const mainRef = useRef(null);
 
-  // Lock body scroll while splash is visible so page can't drift behind it
   useEffect(() => {
     if (showSplash) {
       document.body.classList.add('no-scroll');
@@ -87,7 +82,6 @@ function HomeContent() {
 
   return (
     <div className={styles.appShell}>
-      {/* ── Top header (spans full width) ── */}
       <Header
         onLocationClick={() => setShowLocModal(true)}
         onLanguageClick={() => setShowLangModal(true)}
@@ -96,7 +90,6 @@ function HomeContent() {
         sidebarOpen={sidebarOpen}
       />
 
-      {/* ── Slide-in sidebar drawer (desktop only) ── */}
       <Sidebar
         activeTab={activeTab}
         onTabChange={handleTabChange}
@@ -105,7 +98,6 @@ function HomeContent() {
       />
 
       <div className={styles.bodyRow}>
-        {/* ── Main scrollable content ── */}
         <main className={styles.mainContent} ref={mainRef}>
           {currentView === "profile" ? (
             <ProfilePage onBack={() => { setCurrentView("home"); setActiveTab("home"); }} />
@@ -125,6 +117,7 @@ function HomeContent() {
                   />
                 ))}
               </div>
+              <NearbyActivityCard />
               <UpdatesCarousel />
               <WebFooter />
             </>
@@ -132,7 +125,6 @@ function HomeContent() {
         </main>
       </div>
 
-      {/* ── Bottom nav (tablet + mobile only, hidden on desktop via CSS) ── */}
       <Footer activeTab={activeTab} onTabChange={handleTabChange} />
 
       <LanguageModal
