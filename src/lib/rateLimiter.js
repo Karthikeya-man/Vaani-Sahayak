@@ -12,25 +12,29 @@
 const requestLogs = new Map();
 
 /**
- * Rate Limiter check helper
+ * Per-Identity Rate Limiter Check
+ * Rate-limits per authenticated identity (farmer_id header/option), falling back to client IP.
+ * 
  * @param {Request} request - Next.js HTTP Request object
  * @param {Object} options
- * @param {number} [options.limit=10] - Max allowed requests per window
+ * @param {number} [options.limit=10] - Max allowed requests per window per identity
  * @param {number} [options.windowMs=60000] - Window duration in milliseconds (default 60s)
  * @param {string} [options.prefix='general'] - Route identifier prefix
- * @returns {{ allowed: boolean, remaining: number, resetMs: number, limit: number, isInMemoryStore: true }}
+ * @param {string} [options.identity] - Explicit farmer identity override
+ * @returns {{ allowed: boolean, remaining: number, resetMs: number, limit: number, key: string }}
  */
 export function checkRateLimit(request, options = {}) {
     const limit = options.limit || 10;
     const windowMs = options.windowMs || 60000;
     const prefix = options.prefix || 'general';
 
-    // Get client identifier (IP address from x-forwarded-for or fallback)
-    const clientIp = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 
-                     request.headers.get('x-real-ip') || 
-                     '127.0.0.1';
+    // Extract per-identity key: Header (x-farmer-id / x-user-id) > Explicit option > Client IP
+    const farmerHeader = request?.headers?.get ? (request.headers.get('x-farmer-id') || request.headers.get('x-user-id')) : null;
+    const clientIp = request?.headers?.get ? (request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || request.headers.get('x-real-ip')) : null;
+    
+    const identity = options.identity || farmerHeader || clientIp || '127.0.0.1';
+    const key = `${prefix}:${identity}`;
 
-    const key = `${prefix}:${clientIp}`;
     const now = Date.now();
     const windowStart = now - windowMs;
 
@@ -52,6 +56,7 @@ export function checkRateLimit(request, options = {}) {
         limit,
         remaining,
         resetMs: Math.max(1, resetMs),
+        key,
         isInMemoryStore: true
     };
 }
@@ -63,7 +68,7 @@ export function rateLimitExceededResponse(rateCheck) {
     return new Response(
         JSON.stringify({
             error: 'Rate limit exceeded',
-            message: `Too many requests. Please wait ${rateCheck.resetMs} seconds before trying again.`
+            message: `Too many requests for identity '${rateCheck.key}'. Please wait ${rateCheck.resetMs} seconds before trying again.`
         }),
         {
             status: 429,

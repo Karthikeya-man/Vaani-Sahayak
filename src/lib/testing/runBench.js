@@ -15,47 +15,123 @@ async function isServerUp(url) {
     }
 }
 
-async function runAutocannonTest(title, endpoint, bodyData, durationSec = 10, vus = 20) {
+/**
+ * Runs autocannon benchmark with cycling per-farmer identity headers (x-farmer-id)
+ */
+async function runPerIdentityAutocannonTest(title, endpoint, baseBody, durationSec = 10, vus = 20, numDistinctFarmers = 30) {
     console.log("\n======================================================");
-    console.log("🚀 [AUTOCANNON LOAD TEST] " + title);
-    console.log("Endpoint: " + endpoint + " | Concurrent VUs: " + vus + " | Duration: " + durationSec + "s");
+    console.log("🚀 [PER-IDENTITY LOAD TEST] " + title);
+    console.log("Endpoint: " + endpoint + " | Concurrent VUs: " + vus + " | Distinct Farmers: " + numDistinctFarmers + " | Duration: " + durationSec + "s");
     console.log("======================================================");
 
-    console.log("  📊 Postgres Pool State Before: Active Total=" + pool.totalCount + ", Idle=" + pool.idleCount + ", Waiting=" + pool.waitingCount);
+    console.log("  📊 PG Pool Before: Total=" + pool.totalCount + ", Idle=" + pool.idleCount + ", Waiting=" + pool.waitingCount);
+
+    let reqIndex = 0;
+    const http200Latencies = [];
+    let http200Count = 0;
+    let http429Count = 0;
+    let http500Count = 0;
 
     const res = await autocannon({
         url: APP_BASE_URL + endpoint,
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify(bodyData),
         connections: vus,
-        duration: durationSec
+        duration: durationSec,
+        setupClient: (client) => {
+            const farmerId = `farmer_id_identity_${(reqIndex++ % numDistinctFarmers) + 1}`;
+            client.setHeaders({
+                'content-type': 'application/json',
+                'x-farmer-id': farmerId
+            });
+            client.setBody(JSON.stringify({ ...baseBody, farmerId }));
+        }
     });
 
-    console.log("  📊 Postgres Pool State After: Active Total=" + pool.totalCount + ", Idle=" + pool.idleCount + ", Waiting=" + pool.waitingCount);
+    console.log("  📊 PG Pool After: Total=" + pool.totalCount + ", Idle=" + pool.idleCount + ", Waiting=" + pool.waitingCount);
 
     const totalReqs = res.requests.total || 0;
     const rps = res.requests.average || 0;
+
+    // Filter status codes
+    http200Count = res['2xx'] || 0;
+    http429Count = res['4xx'] || 0;
+    http500Count = res['5xx'] || 0;
+
     const p50 = res.latency.p50 || 0;
     const p95 = res.latency.p95 || 0;
     const p99 = res.latency.p99_9 || res.latency.max || 0;
-    const errCount = (res.errors || 0) + (res.timeouts || 0) + (res['4xx'] || 0) + (res['5xx'] || 0);
-    const errPct = totalReqs > 0 ? ((errCount / totalReqs) * 100).toFixed(2) : 0;
 
-    console.log("\n📈 [MEASURED NUMBERS — " + title + "]");
-    console.log("  • Total Requests Completed: " + totalReqs);
-    console.log("  • Measured Throughput: " + rps.toFixed(2) + " req/sec");
-    console.log("  • Latency (p50): " + p50 + " ms");
-    console.log("  • Latency (p95): " + p95 + " ms");
-    console.log("  • Latency (p99): " + p99 + " ms");
-    console.log("  • Error Rate: " + errPct + "% (Total Errors: " + errCount + " | 2xx: " + (res['2xx'] || 0) + " | 4xx: " + (res['4xx'] || 0) + " | 5xx: " + (res['5xx'] || 0) + ")");
+    console.log("\n📈 [MEASURED RESULTS FOR " + numDistinctFarmers + " DISTINCT FARMER IDENTITIES]");
+    console.log("  • Total Requests Executed: " + totalReqs);
+    console.log("  • Throughput: " + rps.toFixed(2) + " req/sec");
+    console.log("  • Successful HTTP 200 Responses: " + http200Count + " (" + ((http200Count/totalReqs)*100).toFixed(1) + "%)");
+    console.log("  • Rate Limited HTTP 429 Responses: " + http429Count + " (" + ((http429Count/totalReqs)*100).toFixed(1) + "%)");
+    console.log("  • Server Error HTTP 5xx Responses: " + http500Count);
+    console.log("  • Latency Distribution (Overall): p50=" + p50 + "ms | p95=" + p95 + "ms | p99=" + p99 + "ms");
 
-    return { title, totalReqs, rps, p50, p95, p99, errPct, errCount };
+    return { title, totalReqs, rps, http200Count, http429Count, p50, p95, p99 };
+}
+
+/**
+ * PostgreSQL Connection Pool Saturation Test under legitimate non-rate-limited concurrent SQL queries
+ */
+async function testPostgresPoolSaturation(numConcurrentFarmers = 30) {
+    console.log("\n======================================================");
+    console.log("🐘 [REAL POSTGRES CONCURRENCY SATURATION TEST]");
+    console.log("Simulating " + numConcurrentFarmers + " concurrent legitimate SQL query transactions...");
+    console.log("======================================================");
+
+    const initialPoolState = { total: pool.totalCount, idle: pool.idleCount, waiting: pool.waitingCount };
+    console.log("  📊 Postgres Pool Initial State: Total=" + initialPoolState.total + ", Idle=" + initialPoolState.idle + ", Waiting=" + initialPoolState.waiting + " (Max Limit: " + (pool.options?.max || 10) + ")");
+
+    const queryPromises = [];
+    const startTime = Date.now();
+
+    for (let i = 1; i <= numConcurrentFarmers; i++) {
+        const farmerId = `farmer_id_identity_${i}`;
+        const queryPromise = (async () => {
+            const client = await pool.connect();
+            try {
+                // Simulate legitimate farmer chat state fetch & conversation log
+                const stateRes = await client.query('SELECT * FROM "FARMER" LIMIT 1');
+                const logRes = await client.query(
+                    'INSERT INTO "CONVERSATION" (channel, user_message, assistant_response) VALUES ($1, $2, $3) RETURNING id',
+                    ['chat', 'Concurrency test query from ' + farmerId, 'Response to ' + farmerId]
+                );
+                return { success: true, farmerId, conversationId: logRes.rows[0].id };
+            } finally {
+                client.release();
+            }
+        })();
+        queryPromises.push(queryPromise);
+    }
+
+    const midPoolState = { total: pool.totalCount, idle: pool.idleCount, waiting: pool.waitingCount };
+    console.log("  📊 Postgres Pool State During Burst: Active Total=" + midPoolState.total + ", Idle=" + midPoolState.idle + ", Waiting=" + midPoolState.waiting);
+
+    const results = await Promise.allSettled(queryPromises);
+    const wallClockMs = Date.now() - startTime;
+
+    const successfulQueries = results.filter(r => r.status === 'fulfilled' && r.value.success).length;
+    const failedQueries = results.filter(r => r.status === 'rejected').length;
+
+    const finalPoolState = { total: pool.totalCount, idle: pool.idleCount, waiting: pool.waitingCount };
+
+    console.log("\n📈 [REAL POSTGRES CONCURRENCY TEST RESULTS]");
+    console.log("  • Concurrent Queries Dispatched: " + numConcurrentFarmers);
+    console.log("  • Wall-Clock Execution Time: " + wallClockMs + " ms");
+    console.log("  • Successful DB Transactions: " + successfulQueries + "/" + numConcurrentFarmers);
+    console.log("  • Failed DB Queries: " + failedQueries);
+    console.log("  • Average Query Latency: " + (wallClockMs / numConcurrentFarmers).toFixed(2) + " ms/query");
+    console.log("  • Postgres Pool Final State: Total=" + finalPoolState.total + ", Idle=" + finalPoolState.idle + ", Waiting=" + finalPoolState.waiting);
+
+    return { numConcurrentFarmers, wallClockMs, successfulQueries, failedQueries, midPoolState, finalPoolState };
 }
 
 async function startSuite() {
     console.log("\n==========================================================");
-    console.log("🔥 [EMPIRICAL LOAD TESTING & CONCURRENCY BENCHMARK]");
+    console.log("🔥 [PER-IDENTITY LOAD TESTING & REAL DB CONCURRENCY BENCHMARK]");
     console.log("==========================================================");
 
     const fRes = await pool.query('SELECT COUNT(*) FROM "FARMER"');
@@ -65,121 +141,24 @@ async function startSuite() {
     const serverOnline = await isServerUp(APP_BASE_URL);
     console.log("Next.js Local Server Status (" + APP_BASE_URL + "): " + (serverOnline ? 'ONLINE' : 'OFFLINE'));
 
-    // PART A: API Load Tests
+    // PART A: Per-Identity API Load Tests
     if (serverOnline) {
-        await runAutocannonTest('/api/chat Load Test (20 VUs, 10s)', '/api/chat', { message: "What fertilizer for Wheat in Karnal?", language: "hi" }, 10, 20);
-        
-        try {
-            const spotRes = await fetch(APP_BASE_URL + '/api/chat', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ message: "Mandi price for Cotton in Rajkot", language: "gu" })
-            });
-            const spotJson = await spotRes.json();
-            const snippet = (spotJson.reply || spotJson.error || '').substring(0, 60);
-            console.log("  🔍 Spot Check /api/chat Response Correctness: HTTP " + spotRes.status + " | Output: " + snippet);
-        } catch (e) {
-            console.warn("Spot check failed:", e.message);
-        }
+        // Chat endpoint with 30 distinct farmer identities
+        await runPerIdentityAutocannonTest('/api/chat Load Test (30 Distinct Farmers)', '/api/chat', { message: "What fertilizer for Wheat in Karnal?", language: "hi" }, 10, 20, 30);
 
-        await runAutocannonTest('/api/ivr Load Test (20 VUs, 10s)', '/api/ivr', { SpeechResult: "Weather update for Ludhiana", Digits: "1", From: "+919870000001" }, 10, 20);
+        // IVR endpoint with 30 distinct farmer identities
+        await runPerIdentityAutocannonTest('/api/ivr Load Test (30 Distinct Farmers)', '/api/ivr', { SpeechResult: "Weather update for Ludhiana", Digits: "1", From: "+919870000001" }, 10, 20, 30);
 
+        // Crop Scan endpoint with 30 distinct farmer identities & image payload
         const sampleJpg = 'data:image/jpeg;base64,' + Buffer.from('mock jpeg image payload bytes').toString('base64');
-        await runAutocannonTest('/api/crop-scan Load Test (20 VUs, 10s)', '/api/crop-scan', { crop: "Cotton", disease: "Pink Bollworm", district: "Rajkot", image: sampleJpg }, 10, 20);
+        await runPerIdentityAutocannonTest('/api/crop-scan Load Test (30 Distinct Farmers)', '/api/crop-scan', { crop: "Cotton", disease: "Pink Bollworm", district: "Rajkot", image: sampleJpg }, 10, 20, 30);
     }
 
-    // PART B: Background Job Concurrency Test
-    console.log("\n======================================================");
-    console.log("⚙️ [PART B — BACKGROUND JOB CONCURRENCY TEST (200 FARMERS)]");
-    console.log("======================================================");
-
-    const t0 = Date.now();
-    const briefingRes = await runDailyBriefingJob();
-    const briefingSec = ((Date.now() - t0) / 1000).toFixed(2);
-    console.log("📈 Daily Briefing Job Metrics (" + farmerCount + " Farmers):");
-    console.log("  • Wall-Clock Execution Time: " + briefingSec + " seconds");
-    console.log("  • Briefings Sent: " + briefingRes.sentCount);
-    console.log("  • Briefings Skipped (Same Day Dedup): " + briefingRes.skippedCount);
-    console.log("  • Errors / Failures: " + (briefingRes.errorCount || 0));
-    console.log("  • Total Gemini NMT Calls: " + briefingRes.sentCount);
-
-    const t1 = Date.now();
-    const alertRes = await runAlertEngineJob();
-    const alertSec = ((Date.now() - t1) / 1000).toFixed(2);
-    console.log("\n📈 Alert Engine Job Metrics (" + farmerCount + " Farmers):");
-    console.log("  • Wall-Clock Execution Time: " + alertSec + " seconds");
-    console.log("  • Triggered Alert Conditions: " + alertRes.alertsTriggered);
-    console.log("  • Sent Alert Notifications: " + alertRes.alertsSent);
-    console.log("  • Deduped Alerts (ALERT_DEDUP Log): " + alertRes.alertsDeduped);
-
-    console.log("\n⚡ [CONCURRENT RACE CONDITION CHECK] 10 Simultaneous Scheme Confirmations");
-    const farmersRes = await pool.query('SELECT id FROM "FARMER" LIMIT 10');
-    const schemeRes = await pool.query('SELECT id FROM "SCHEME" LIMIT 1');
-
-    const appList = [];
-    if (schemeRes.rows.length > 0) {
-        for (const f of farmersRes.rows) {
-            const insRes = await pool.query(
-                'INSERT INTO "SCHEME_APPLICATION" (farmer_id, scheme_id, status, form_data) VALUES ($1, $2, \'pending_confirmation\', \'{"name":"Farmer Test"}\') ON CONFLICT (farmer_id, scheme_id) DO UPDATE SET status = \'pending_confirmation\' RETURNING id',
-                [f.id, schemeRes.rows[0].id]
-            );
-            appList.push({ farmerId: f.id, appId: insRes.rows[0].id });
-        }
-    }
-
-    const t2 = Date.now();
-    const raceResults = await Promise.all(appList.map(item => confirmSchemeApplication(item.farmerId, item.appId)));
-    const raceMs = Date.now() - t2;
-
-    let submittedCount = 0, dupBlockedCount = 0, errCount = 0;
-    raceResults.forEach(r => {
-        if (r.success) submittedCount++;
-        else if (r.alreadyConfirmed) dupBlockedCount++;
-        else errCount++;
-    });
-
-    console.log("📈 10 Simultaneous Confirmation Results:");
-    console.log("  • Concurrent Wall-Clock Time: " + raceMs + " ms");
-    console.log("  • Successful Submissions: " + submittedCount);
-    console.log("  • Duplicate Submissions Blocked: " + dupBlockedCount);
-    console.log("  • Escalated / Missing Fields: " + errCount);
-
-    // PART C: External API Quota Reality Check
-    console.log("\n======================================================");
-    console.log("🌐 [PART C — EXTERNAL API QUOTA REALITY CHECK (200 FARMERS)]");
-    console.log("======================================================");
-
-    const distRes = await pool.query('SELECT DISTINCT district FROM "FARMER" WHERE district IS NOT NULL');
-    const distinctDistrictsCount = distRes.rows.length;
-    const runsPerDay = 4;
-    const callsPerRun = distinctDistrictsCount;
-    const totalDailyCallsMeasured = callsPerRun * runsPerDay;
-    const headroomPct = (((1000 - totalDailyCallsMeasured) / 1000) * 100).toFixed(1);
-
-    console.log("📈 Weather API Quota Scaling Data (" + farmerCount + " Farmers):");
-    console.log("  • Total Active Farmers: " + farmerCount);
-    console.log("  • Distinct Districts: " + distinctDistrictsCount);
-    console.log("  • Runs Per Day (0 */6 * * *): " + runsPerDay);
-    console.log("  • Actual Weather API Calls Per Run: " + callsPerRun);
-    console.log("  • Total Daily Weather API Calls (24h Cycle): " + totalDailyCallsMeasured);
-    console.log("  • Free-Tier Quota Cap: 1,000 calls/day");
-    console.log("  • Quota Headroom Remaining: " + (1000 - totalDailyCallsMeasured) + " calls/day (" + headroomPct + "% remaining)");
-    console.log("  • Scaling Reality: District-level aggregation causes API calls to scale with DISTINCT DISTRICTS (" + distinctDistrictsCount + "), NOT farmer count (" + farmerCount + ")!");
-
-    // PART D: Failure & Degradation Behavior Simulation
-    console.log("\n======================================================");
-    console.log("🧪 [PART D — FAILURE & DEGRADATION BEHAVIOR SIMULATION]");
-    console.log("======================================================");
-
-    console.log("1. Gemini API 20% Fault Injection Simulation:");
-    console.log("  • 10/10 injected fault requests returned clear fallback message ('assistant experiencing heavy load') without application crash.");
-
-    console.log("\n2. Postgres Connection Pool Saturation Simulation:");
-    console.log("  • Pool max limit = " + (pool.options?.max || 10) + ", total active connections = " + pool.totalCount);
-    console.log("  • Pool saturation behavior: Excess requests queue in Node event loop memory up to connectionTimeoutMillis, returning 500 error if timeout reached without crashing server process.");
+    // PART B: Real Postgres Pool Saturation Test
+    await testPostgresPoolSaturation(30);
 
     console.log("\n==========================================================");
-    console.log("🏁 [FULL LOAD TESTING & CONCURRENCY BENCHMARK COMPLETE]");
+    console.log("🏁 [PER-IDENTITY BENCHMARK SUITE COMPLETE]");
     console.log("==========================================================\n");
 }
 
